@@ -1,0 +1,711 @@
+/* 认证页面专用样式 */
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+}
+
+.auth-box {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+    overflow: hidden;
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-header {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(45deg);
+}
+
+.auth-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-header p {
+    margin: 10px 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.auth-body {
+    padding: 30px;
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 25px;
+    border-bottom: 2px solid #eee;
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #666;
+    position: relative;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn.active {
+    color: #e74c3c;
+    border-bottom-color: #e74c3c;
+}
+
+.tab-btn:hover {
+    color: #e74c3c;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.4s ease-in;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-form .form-group {
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.auth-form input,
+.auth-form select {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
+    border-color: #e74c3c;
+    background: white;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+.auth-form input::placeholder {
+    color: #999;
+}
+
+.form-icon {
+    position: absolute;
+    right: 15px;
+    top: 42px;
+    color: #999;
+    font-size: 1.1rem;
+}
+
+.captcha-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.captcha-container input {
+    flex: 1;
+}
+
+.captcha-code {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    min-width: 120px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.captcha-code:hover {
+    transform: scale(1.05);
+}
+
+.auth-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.auth-btn:hover::before {
+    left: 100%;
+}
+
+.auth-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(231, 76, 60, 0.3);
+}
+
+.auth-btn:active {
+    transform: translateY(0);
+}
+
+.auth-btn.loading {
+    pointer-events: none;
+}
+
+.auth-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.auth-links {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.auth-links a {
+    color: #666;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.auth-links a:hover {
+    color: #e74c3c;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    margin: 25px 0;
+    color: #666;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #eee;
+}
+
+.auth-divider span {
+    padding: 0 15px;
+    font-size: 0.9rem;
+}
+
+.social-auth {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.social-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.social-btn.wechat {
+    color: #07C160;
+    border-color: #07C160;
+}
+
+.social-btn.wechat:hover {
+    background: #07C160;
+    color: white;
+}
+
+.social-btn.qq {
+    color: #12B7F5;
+    border-color: #12B7F5;
+}
+
+.social-btn.qq:hover {
+    background: #12B7F5;
+    color: white;
+}
+
+/* 错误提示 */
+.error-message {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+    animation: shake 0.3s ease;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
+
+.form-group.error input,
+.form-group.error select {
+    border-color: #e74c3c;
+    background: #fff5f5;
+}
+
+.form-group.error .error-message {
+    display: block;
+}
+
+/* 成功提示 */
+.success-message {
+    color: #27ae60;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: none;
+}
+
+.form-group.success input,
+.form-group.success select {
+    border-color: #27ae60;
+    background: #f5fff9;
+}
+
+.form-group.success .success-message {
+    display: block;
+}
+
+/* 密码强度指示器 */
+.password-strength {
+    margin-top: 8px;
+    height: 4px;
+    background: #eee;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-weak {
+    background: #e74c3c;
+    width: 33%;
+}
+
+.strength-medium {
+    background: #f39c12;
+    width: 66%;
+}
+
+.strength-strong {
+    background: #27ae60;
+    width: 100%;
+}
+
+.strength-text {
+    font-size: 0.8rem;
+    margin-top: 5px;
+    color: #666;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 10px;
+    }
+    
+    .auth-box {
+        border-radius: 12px;
+    }
+    
+    .auth-header {
+        padding: 25px 20px;
+    }
+    
+    .auth-header h2 {
+        font-size: 1.8rem;
+    }
+    
+    .auth-body {
+        padding: 25px;
+    }
+    
+    .auth-tabs {
+        margin-bottom: 20px;
+    }
+    
+    .tab-btn {
+        padding: 12px;
+        font-size: 0.95rem;
+    }
+    
+    .social-auth {
+        grid-template-columns: 1fr;
+    }
+    
+    .auth-links {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .auth-links a {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-header {
+        padding: 20px 15px;
+    }
+    
+    .auth-header h2 {
+        font-size: 1.6rem;
+    }
+    
+    .auth-body {
+        padding: 20px 15px;
+    }
+    
+    .auth-form input,
+    .auth-form select {
+        padding: 12px;
+    }
+    
+    .captcha-container {
+        flex-direction: column;
+    }
+    
+    .captcha-code {
+        width: 100%;
+        margin-top: 10px;
+    }
+}
+
+/* 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+    .auth-box {
+        background: #2c3e50;
+        color: #ecf0f1;
+    }
+    
+    .auth-form label {
+        color: #ecf0f1;
+    }
+    
+    .auth-form input,
+    .auth-form select {
+        background: #34495e;
+        border-color: #4a6572;
+        color: #ecf0f1;
+    }
+    
+    .auth-form input:focus,
+    .auth-form select:focus {
+        background: #2c3e50;
+        border-color: #e74c3c;
+    }
+    
+    .auth-links a {
+        color: #bdc3c7;
+    }
+    
+    .auth-links a:hover {
+        color: #e74c3c;
+    }
+    
+    .auth-divider {
+        color: #bdc3c7;
+    }
+    
+    .auth-divider::before,
+    .auth-divider::after {
+        background: #4a6572;
+    }
+}
+
+/* 无障碍支持 */
+.auth-form input:focus-visible,
+.auth-form select:focus-visible,
+.auth-btn:focus-visible,
+.tab-btn:focus-visible {
+    outline: 2px solid #e74c3c;
+    outline-offset: 2px;
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+    .auth-box {
+        border: 2px solid #000;
+    }
+    
+    .auth-form input,
+    .auth-form select {
+        border-width: 2px;
+    }
+    
+    .auth-btn {
+        border: 2px solid #000;
+    }
+}
+
+/* 模态框背景遮罩 */
+.modal {
+    display: none; /* 默认隐藏 */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色遮罩 */
+    align-items: center;
+    justify-content: center;
+}
+
+/* 模态框内容 */
+.modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    border: 1px solid #888;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* 模态框头部 */
+.modal-header {
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+}
+
+/* 关闭按钮 */
+.close-btn {
+    color: white;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    transition: transform 0.2s ease;
+}
+
+.close-btn:hover {
+    transform: rotate(90deg);
+}
+
+/* 模态框主体 */
+.modal-body {
+    padding: 20px;
+}
+
+/* 在文件末尾添加 */
+.network-error-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.network-error-content {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+.network-error-header h3 {
+    color: #e74c3c;
+    margin-bottom: 20px;
+}
+
+.network-error-body i {
+    font-size: 3rem;
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.network-error-body p {
+    color: #666;
+    margin-bottom: 25px;
+}
+
+.network-error-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease;
+}
+
+.toast-success {
+    border-left: 4px solid #27ae60;
+}
+
+.toast-error {
+    border-left: 4px solid #e74c3c;
+}
+
+.toast i {
+    font-size: 1.2rem;
+}
+
+.toast-success i {
+    color: #27ae60;
+}
+
+.toast-error i {
+    color: #e74c3c;
+}
