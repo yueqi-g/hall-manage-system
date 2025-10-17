@@ -113,7 +113,7 @@ export const dishesAPI = {
   search: (params) => api.get('/dishes/search', { params }),
   
   // 搜索建议
-  searchSuggestions: (params) => api.get('/dishes/search', { params }),
+  searchSuggestions: (params) => api.get('/dishes/suggestions', { params }),
   
   // 菜品筛选
   filter: (params) => api.get('/dishes/filter', { params }),

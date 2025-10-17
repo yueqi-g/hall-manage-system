@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import UserDashboard from '../views/UserDashboard.vue'
 import MerchantDashboard from '../views/MerchantDashboard.vue'
+import SearchResults from '../views/SearchResults.vue'
 
 const routes = [
   {
@@ -26,6 +27,11 @@ const routes = [
     path: '/merchant/dashboard',
     name: 'merchant-dashboard',
     component: MerchantDashboard
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchResults,
   }
 ]
 
@@ -45,7 +51,8 @@ router.beforeEach((to, from, next) => {
     // 如果已登录，根据用户类型重定向
     if (currentUser.type === 'user' && to.name !== 'user-dashboard') {
       // 重定向到用户仪表板
-      next({ name: 'user-dashboard' })
+      // next({ name: 'user-dashboard' })
+      next()
     } else if (currentUser.type === 'merchant' && to.name !== 'merchant-dashboard') {
       // 重定向到商家仪表板
       next({ name: 'merchant-dashboard' })

@@ -21,17 +21,55 @@ def dish_search(request):
         query = request.GET.get('q', '')
         page = int(request.GET.get('page', 1))
         limit = int(request.GET.get('limit', 10))
+        ordering = request.GET.get('ordering', 'default')
         
         # 构建过滤条件
         filters = {
             'page': page,
-            'limit': limit
+            'limit': limit,
+            'ordering': ordering
         }
+        
+        # 添加额外的筛选条件（从搜索结果页应用筛选）
+        if request.GET.get('price_min'):
+            filters['priceMin'] = float(request.GET.get('price_min'))
+        if request.GET.get('price_max'):
+            filters['priceMax'] = float(request.GET.get('price_max'))
+        if request.GET.get('spice_level'):
+            filters['spice_level'] = request.GET.get('spice_level')
+        if request.GET.get('crowd_level'):
+            filters['crowd_level'] = request.GET.get('crowd_level')
+        if request.GET.get('hall'):
+            filters['hall'] = request.GET.get('hall')
         
         # 调用服务层进行搜索
         result = dish_service.search_dishes_service(query, filters)
         
         return api_success(result, "搜索成功")
+        
+    except ValidationException as e:
+        return api_validation_error(str(e))
+    except Exception as e:
+        return api_error("SERVER_001", str(e), "服务器内部错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def dish_suggestions(request):
+    """
+    搜索建议
+    GET /api/dishes/suggestions?q={query}
+    """
+    try:
+        # 获取查询参数
+        query = request.GET.get('q', '')
+        
+        if not query or len(query) < 2:
+            return api_success([], "搜索建议为空")
+        
+        # 调用服务层获取搜索建议
+        suggestions = dish_service.get_search_suggestions(query)
+        
+        return api_success(suggestions, "获取搜索建议成功")
         
     except ValidationException as e:
         return api_validation_error(str(e))
@@ -49,11 +87,13 @@ def dish_filter(request):
         # 获取筛选条件
         criteria = {
             'category': request.GET.get('category', ''),
-            'taste': request.GET.get('tastes', ''),
+            'taste': request.GET.get('tastes', ''),  # 保持taste字段名，与数据库查询一致
             'priceMin': float(request.GET.get('price_min', 0)) if request.GET.get('price_min') else None,
             'priceMax': float(request.GET.get('price_max', 999)) if request.GET.get('price_max') else None,
             'spice_level': request.GET.get('spice_level', ''),
-            'hall': request.GET.get('hall', '')
+            'crowd_level': request.GET.get('crowd_level', ''),  # 添加人流量筛选
+            'hall': request.GET.get('hall', ''),
+            'ordering': request.GET.get('ordering', 'default')
         }
         
         print(f"筛选请求 - 原始参数: {dict(request.GET)}")

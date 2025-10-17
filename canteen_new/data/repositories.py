@@ -236,12 +236,37 @@ class DishRepository:
             conditions.append("m.canteen = %s")
             params.append(filters['hall'])
         
+        # 人流量筛选（基于食堂的最新客流量数据）
+        if filters.get('crowd_level') and filters.get('crowd_level') != 'any':
+            crowd_level = filters['crowd_level']
+            # 根据人流量等级筛选食堂
+            # low: count < 30, medium: 30 <= count < 60, high: count >= 60
+            subquery = """
+                SELECT DISTINCT t.merchant_id
+                FROM traffic_data t
+                WHERE t.timestamp = (
+                    SELECT MAX(t2.timestamp)
+                    FROM traffic_data t2
+                    WHERE t2.merchant_id = t.merchant_id
+                )
+            """
+            
+            if crowd_level == 'low':
+                subquery += " AND t.count < 30"
+            elif crowd_level == 'medium':
+                subquery += " AND t.count >= 30 AND t.count < 60"
+            elif crowd_level == 'high':
+                subquery += " AND t.count >= 60"
+            
+            conditions.append(f"d.merchant_id IN ({subquery})")
+        
         where_clause = " AND ".join(conditions)
         
-        # 获取总数
+        # 获取总数（需要 LEFT JOIN merchants，因为可能有食堂筛选条件）
         count_query = f"""
             SELECT COUNT(*) as total
             FROM dishes d
+            LEFT JOIN merchants m ON d.merchant_id = m.id
             WHERE {where_clause}
         """
         total_result = query_one(count_query, tuple(params))
@@ -252,6 +277,22 @@ class DishRepository:
         limit = filters.get('limit', 100)  # 增加默认limit，便于筛选
         offset = (page - 1) * limit
         
+        # 构建排序条件
+        ordering = filters.get('ordering', 'default')
+        order_clause = "d.rating DESC, d.id DESC"  # 默认排序
+        
+        if ordering == 'price' or ordering == 'price_asc':
+            order_clause = "d.price ASC, d.rating DESC"
+        elif ordering == '-price' or ordering == 'price_desc':
+            order_clause = "d.price DESC, d.rating DESC"
+        elif ordering == '-rating' or ordering == 'rating':
+            order_clause = "d.rating DESC, d.price ASC"
+        elif ordering == 'created_at':
+            order_clause = "d.id DESC"  # 按创建顺序（ID）降序
+        elif ordering == 'wait_time':
+            # 这里可以根据等待时间排序，暂时使用rating
+            order_clause = "d.rating DESC, d.id DESC"
+        
         # 获取菜品数据
         query_sql = f"""
             SELECT d.id, d.merchant_id, d.name, d.description, d.price, d.category, 
@@ -260,7 +301,7 @@ class DishRepository:
             FROM dishes d
             LEFT JOIN merchants m ON d.merchant_id = m.id
             WHERE {where_clause}
-            ORDER BY d.rating DESC, d.id DESC
+            ORDER BY {order_clause}
             LIMIT %s OFFSET %s
         """
         params.extend([limit, offset])
@@ -303,6 +344,37 @@ class DishRepository:
         # 使用search_dishes方法进行筛选
         dishes, _ = self.search_dishes("", criteria)
         return dishes
+    
+    def get_search_suggestions(self, query: str) -> List[str]:
+        """获取搜索建议"""
+        if not query or len(query) < 2:
+            return []
+        
+        # 查询菜品名称中包含关键词的建议
+        query_sql = """
+            SELECT DISTINCT d.name
+            FROM dishes d
+            WHERE d.status = 'active' 
+            AND d.name LIKE %s
+            ORDER BY d.name
+            LIMIT 10
+        """
+        
+        results = query_all(query_sql, (f"%{query}%",))
+        
+        # 提取建议列表
+        suggestions = [result['name'] for result in results]
+        
+        # 如果没有找到建议，返回一些通用建议
+        if not suggestions:
+            common_suggestions = [
+                "麻辣香锅", "重庆小面", "黄焖鸡米饭", "扬州炒饭", 
+                "番茄牛肉面", "宫保鸡丁", "红烧肉", "糖醋里脊"
+            ]
+            # 返回包含查询关键词的建议
+            suggestions = [s for s in common_suggestions if query in s]
+        
+        return suggestions
     
     def get_dish_by_id(self, dish_id: int) -> Optional[Dict[str, Any]]:
         """根据ID获取菜品"""

@@ -79,18 +79,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'canteen', #更改为本地数据库名称
-        'USER': 'root',
-        'PASSWORD': '201201375', #更改为本地数据库密码
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'canteen', #更改为本地数据库名称
+            'USER': 'root', #更改为用户名
+            'PASSWORD': '201201375', #更改为本地数据库密码
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            }
         }
     }
-}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

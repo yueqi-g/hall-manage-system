@@ -28,6 +28,11 @@ pip install django-cors-headers
     }
     ```
 3. 输入指令
-    `cd canteen_new; python manage.py runserver 3000`
+cd canteen_new
+
+python manage.py makemigrations
+python manage.py migrate
+python manage.py runserver
+
     启动后端服务
 4. 启动前端服务，仓库地址： https://github.com/AdaChangL/canteen_frontend

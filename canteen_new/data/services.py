@@ -229,6 +229,18 @@ class DishService:
             热门菜品列表
         """
         return self.dish_repo.get_popular_dishes()
+    
+    def get_search_suggestions(self, query: str) -> List[str]:
+        """
+        获取搜索建议
+        
+        Args:
+            query: 搜索关键词
+            
+        Returns:
+            搜索建议列表
+        """
+        return self.dish_repo.get_search_suggestions(query)
 
 
 class OrderService:

@@ -159,10 +159,10 @@
               <label for="hall">{{ $t('canteen') }}</label>
               <select id="hall" class="filter-select" v-model="filters.hall">
                 <option value="">{{ $t('allCanteens') }}</option>
-                <option value="第一食堂">{{ $t('firstCanteen') }}</option>
-                <option value="第二食堂">{{ $t('secondCanteen') }}</option>
-                <option value="第三食堂">{{ $t('thirdCanteen') }}</option>
-                <option value="第四食堂">{{ $t('fourthCanteen') }}</option>
+                <option value="一食堂">一食堂</option>
+                <option value="二食堂">二食堂</option>
+                <option value="三食堂">三食堂</option>
+                <option value="四食堂">四食堂</option>
               </select>
             </div>
             
@@ -359,7 +359,7 @@ export default {
         category: '',
         flavors: [],
         priceMin: 0,
-        priceMax: 50,
+        priceMax: 100,
         crowd: 'any',
         spiceLevel: '',  // 默认不限制辣度，让用户可以看到所有菜品
         hall: '',
@@ -502,6 +502,80 @@ export default {
       this.handleSearch()
     },
     
+    // 菜品搜索 - 使用Vue Router跳转
+    async handleSearch() {
+      if (!this.searchQuery.trim()) return
+      
+      this.showSuggestions = false
+      console.log('开始菜品搜索:', this.searchQuery)
+      
+      try {
+        // 使用Vue Router进行页面跳转，保持SPA体验
+        const queryParams = {
+          q: this.searchQuery,
+          type: 'keyword'
+        }
+        
+        this.$router.push({
+          path: '/search',
+          query: queryParams
+        })
+        
+      } catch (error) {
+        console.error('搜索跳转失败:', error)
+        // 备用方案：使用编程式导航
+        this.$router.push('/search')
+      }
+    },
+    
+    toggleFlavor(flavor) {
+      const index = this.filters.flavors.indexOf(flavor)
+      if (index > -1) {
+        this.filters.flavors.splice(index, 1)
+      } else {
+        this.filters.flavors.push(flavor)
+      }
+    },
+    
+    // 菜品筛选 - 使用Vue Router跳转
+    async applyFilters() {
+      console.log('应用筛选条件:', this.filters)
+      
+      try {
+        // 构建查询参数对象
+        const queryParams = {
+          type: 'filter'
+        }
+        
+        // 添加筛选条件
+        if (this.filters.category) queryParams.category = this.filters.category
+        if (this.filters.flavors.length > 0) queryParams.tastes = this.filters.flavors.join(',')
+        
+        // 价格范围：总是发送，让后端处理
+        queryParams.price_min = this.filters.priceMin
+        queryParams.price_max = this.filters.priceMax
+        
+        if (this.filters.crowd !== 'any') queryParams.crowd_level = this.filters.crowd
+        if (this.filters.spiceLevel !== '') queryParams.spice_level = this.filters.spiceLevel
+        if (this.filters.hall) queryParams.hall = this.filters.hall
+        if (this.filters.sortBy) queryParams.ordering = this.filters.sortBy
+        
+        console.log('跳转参数:', queryParams)
+        
+        // 使用Vue Router进行页面跳转，保持SPA体验
+        this.$router.push({
+          path: '/search',
+          query: queryParams
+        })
+        
+      } catch (error) {
+        console.error('跳转失败:', error)
+        // 备用方案：使用编程式导航
+        this.$router.push('/search')
+      }
+    },
+
+    /*
     // 菜品搜索
     async handleSearch() {
       if (!this.searchQuery.trim()) return
@@ -605,6 +679,8 @@ export default {
       
       alert(resultMessage)
     },
+    */
+
     
     // 保存用户偏好
     async savePreferences() {
@@ -641,7 +717,7 @@ export default {
         category: '',
         flavors: [],
         priceMin: 0,
-        priceMax: 50,
+        priceMax: 100,
         crowd: 'any',
         spiceLevel: '',  // 改为空字符串，表示不限制辣度
         hall: '',
@@ -867,6 +943,7 @@ export default {
   }
 }
 </script>
+
 
 <style>
 /* 搜索建议样式 */
