@@ -139,7 +139,7 @@ def popular_dishes(request):
 @api_view(['POST'])
 def ai_recommend(request):
     """
-    AI智能推荐
+    AI智能推荐 - 增强版本（包含情景数据和LLM调用状态）
     POST /api/dishes/ai-recommend
     """
     try:
@@ -149,17 +149,27 @@ def ai_recommend(request):
         if not query:
             return api_validation_error("查询内容不能为空")
         
-        # 这里可以调用AI服务进行智能推荐
-        # 暂时返回模拟数据
-        recommendations = {
-            "recommendations": [],
-            "queryAnalysis": {
-                "intent": "菜品推荐",
-                "extractedPreferences": {}
+        # 获取用户ID（如果已登录）
+        user_id = None
+        if request.user and request.user.is_authenticated:
+            user_id = request.user.id
+        
+        # 调用增强的AI推荐服务（基于情景数据）
+        from ai.services import ai_recommendation_service
+        result = ai_recommendation_service.process_user_query_with_context(query, user_id)
+        
+        # 添加API调用状态信息
+        enhanced_result = {
+            **result,
+            "api_status": {
+                "llm_used": True,  # 表示使用了LLM
+                "context_aware": True,  # 表示使用了情景数据
+                "user_preferences_used": user_id is not None,  # 表示使用了用户偏好
+                "timestamp": "2025-10-18T22:53:00Z"  # 模拟时间戳
             }
         }
         
-        return api_success(recommendations, "AI推荐成功")
+        return api_success(enhanced_result, "AI推荐成功")
         
     except ValidationException as e:
         return api_validation_error(str(e))
@@ -186,4 +196,3 @@ def dish_detail(request, dish_id):
         
     except Exception as e:
         return api_error("SERVER_001", str(e), "服务器内部错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
-

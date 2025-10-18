@@ -339,7 +339,7 @@
 import AppHeader from '@/components/Header.vue'
 import AppFooter from '@/components/Footer.vue'
 import LoginModal from '@/components/LoginModal.vue'
-import { dishesAPI, ordersAPI, userAPI  } from '@/services/api'
+import { dishesAPI, ordersAPI, userAPI, favoritesAPI  } from '@/services/api'
 
 export default {
   name: 'UserDashboard',
@@ -732,6 +732,9 @@ export default {
       // 添加用户消息
       this.addMessage(this.aiInput, 'user')
       
+      // 显示加载状态
+      const loadingMessage = this.addLoadingMessage()
+      
       try {
         // 获取用户偏好
         const currentUser = JSON.parse(localStorage.getItem('currentUser'))
@@ -750,14 +753,27 @@ export default {
         
         console.log('AI推荐结果:', response)
         
+        // 移除加载消息
+        this.removeLoadingMessage(loadingMessage)
+        
         if (response.success) {
-          const aiResponse = this.formatAIResponse(response.data)
-          this.addMessage(aiResponse, 'ai')
+          // 显示API调用状态
+          const apiStatus = response.data.context_data ? '真实LLM调用' : '模拟模式'
+          const aiResponse = this.formatAIResponse(response.data, apiStatus)
+          
+          // 传递完整的响应数据给消息显示
+          const dishes = response.data.dishes || []
+          const reasons = response.data.reasons || []
+          const contextData = response.data.context_data || {}
+          
+          this.addMessage(aiResponse, 'ai', dishes, reasons, contextData, apiStatus)
         } else {
           this.addMessage('抱歉，AI推荐服务暂时不可用，请稍后再试。', 'ai')
         }
       } catch (error) {
         console.error('AI推荐失败:', error)
+        // 移除加载消息
+        this.removeLoadingMessage(loadingMessage)
         this.addMessage('抱歉，AI推荐服务暂时不可用，请稍后再试。', 'ai')
       }
       
@@ -773,23 +789,71 @@ export default {
       this.aiInput = ''
     },
     
-    formatAIResponse(data) {
-      let response = '根据您的需求，我为您推荐以下菜品：\n\n'
+    // 添加加载消息
+    addLoadingMessage() {
+      const chatMessages = this.$refs.chatMessages
+      if (!chatMessages) return null
       
-      if (data.recommendations && data.recommendations.length > 0) {
-        data.recommendations.forEach((rec, index) => {
-          response += `${index + 1}. ${rec.dish.name} (${rec.dish.canteen}) - ¥${rec.dish.price}\n`
-          response += `   推荐理由: ${rec.reason}\n`
-          response += `   匹配度: ${Math.round(rec.matchScore * 100)}%\n\n`
-        })
-      } else {
-        response = '抱歉，没有找到符合您需求的菜品，请尝试调整您的搜索条件。'
-      }
+      const loadingDiv = document.createElement('div')
+      loadingDiv.className = 'message ai-message loading-message'
+      loadingDiv.innerHTML = `
+        <div class="message-content">
+          <div class="loading-indicator">
+            <div class="loading-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <p>AI正在思考中...</p>
+          </div>
+        </div>
+      `
       
-      return response
+      chatMessages.appendChild(loadingDiv)
+      return loadingDiv
     },
     
-    addMessage(text, type) {
+    // 移除加载消息
+    removeLoadingMessage(loadingMessage) {
+      if (loadingMessage && loadingMessage.parentNode) {
+        loadingMessage.parentNode.removeChild(loadingMessage)
+      }
+    },
+    
+    formatAIResponse(data) {
+      console.log('格式化AI响应数据:', data)
+      
+      // 检查响应类型
+      if (data.type === 'chat_response') {
+        return data.content
+      }
+      
+      if (data.type === 'recommendation') {
+        let response = data.content + '\n\n'
+        
+        if (data.dishes && data.dishes.length > 0) {
+          data.dishes.forEach((dish, index) => {
+            response += `${index + 1}. ${dish.name} (${dish.canteen || dish.store_name}) - ¥${dish.price}\n`
+            if (data.reasons && data.reasons[index]) {
+              response += `   推荐理由: ${data.reasons[index]}\n`
+            }
+            response += `   口味: ${dish.taste} | 评分: ${dish.rating}\n\n`
+          })
+        } else {
+          response = '抱歉，没有找到符合您需求的菜品，请尝试调整您的搜索条件。'
+        }
+        
+        return response
+      }
+      
+      if (data.type === 'error') {
+        return data.content
+      }
+      
+      return '抱歉，AI推荐服务暂时不可用，请稍后再试。'
+    },
+    
+    addMessage(text, type, dishes = null) {
       const chatMessages = this.$refs.chatMessages
       if (!chatMessages) return
       
@@ -803,11 +867,57 @@ export default {
           </div>
         `
       } else {
-        messageDiv.innerHTML = `
-          <div class="message-content">
-            <p>${text}</p>
-          </div>
-        `
+        let content = `<div class="message-content"><p>${text}</p>`
+        
+        // 如果有菜品数据，添加菜品展示区域
+        if (dishes && dishes.length > 0) {
+          content += `
+            <div class="ai-dishes-container">
+              <div class="ai-dishes-grid">
+                ${dishes.map(dish => `
+                  <div class="ai-dish-card" data-dish-id="${dish.id}">
+                    <div class="ai-dish-image" style="background: ${this.getRandomGradient()}">
+                      <div class="ai-dish-rating">
+                        <i class="fas fa-star"></i> ${dish.rating}
+                      </div>
+                      <i class="${this.getDishIcon(dish.category)}"></i>
+                    </div>
+                    <div class="ai-dish-info">
+                      <h4 class="ai-dish-name">${dish.name}</h4>
+                      <p class="ai-dish-price">¥${dish.price}</p>
+                      <p class="ai-dish-description">${dish.description}</p>
+                      <div class="ai-dish-meta">
+                        <span class="ai-dish-taste">${dish.taste}</span>
+                        <span class="ai-dish-canteen">${dish.canteen || dish.store_name}</span>
+                      </div>
+                      <div class="ai-dish-actions">
+                        <button class="ai-dish-btn ai-order-btn" onclick="this.closest('.ai-dish-card').dispatchEvent(new CustomEvent('orderDish', {detail: ${dish.id}, bubbles: true}))">
+                          <i class="fas fa-utensils"></i> 下单
+                        </button>
+                        <button class="ai-dish-btn ai-favorite-btn" onclick="this.closest('.ai-dish-card').dispatchEvent(new CustomEvent('favoriteDish', {detail: ${dish.id}, bubbles: true}))">
+                          <i class="fas fa-heart"></i> 收藏
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `
+        }
+        
+        content += '</div>'
+        messageDiv.innerHTML = content
+        
+        // 添加事件监听器
+        if (dishes && dishes.length > 0) {
+          messageDiv.addEventListener('orderDish', (e) => {
+            this.orderDish(e.detail)
+          })
+          messageDiv.addEventListener('favoriteDish', (e) => {
+            this.addToFavorites(e.detail)
+          })
+        }
       }
       
       chatMessages.appendChild(messageDiv)
@@ -869,7 +979,7 @@ export default {
       try {
         console.log('收藏菜品:', dishId)
         
-        const response = await ordersAPI.addFavorite({
+        const response = await favoritesAPI.addFavorite({
           dishId: dishId
         })
         
@@ -1184,6 +1294,147 @@ export default {
   transform: translateY(-1px);
 }
 
+/* AI聊天框菜品展示样式 */
+.ai-dishes-container {
+  margin-top: 15px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 15px;
+}
+
+.ai-dishes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.ai-dish-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+}
+
+.ai-dish-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ai-dish-image {
+  height: 120px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.ai-dish-rating {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ai-dish-image i {
+  font-size: 2rem;
+  opacity: 0.9;
+}
+
+.ai-dish-info {
+  padding: 16px;
+}
+
+.ai-dish-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+}
+
+.ai-dish-price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #e74c3c;
+  margin: 0 0 8px 0;
+}
+
+.ai-dish-description {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin: 0 0 12px 0;
+  line-height: 1.4;
+}
+
+.ai-dish-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.ai-dish-taste {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.ai-dish-canteen {
+  color: #6c757d;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.ai-dish-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-dish-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ai-order-btn {
+  background: #28a745;
+  color: white;
+}
+
+.ai-order-btn:hover {
+  background: #1e7e34;
+  transform: translateY(-1px);
+}
+
+.ai-favorite-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.ai-favorite-btn:hover {
+  background: #545b62;
+  transform: translateY(-1px);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .filter-actions {
@@ -1203,6 +1454,14 @@ export default {
   
   .crowd-level {
     justify-content: center;
+  }
+  
+  .ai-dishes-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ai-dish-actions {
+    flex-direction: column;
   }
 }
 </style>

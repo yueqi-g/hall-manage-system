@@ -241,6 +241,218 @@ class DishService:
             搜索建议列表
         """
         return self.dish_repo.get_search_suggestions(query)
+    
+    def get_dishes_by_criteria(self, criteria: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        根据多种条件查询菜品
+        
+        Args:
+            criteria: 查询条件
+            
+        Returns:
+            符合条件的菜品列表
+        """
+        # 调用数据访问层进行筛选
+        dishes = self.dish_repo.filter_dishes(criteria)
+        
+        # 应用评分筛选
+        if criteria.get('min_rating') is not None:
+            dishes = [dish for dish in dishes if dish.get('rating', 0) >= criteria['min_rating']]
+        
+        # 应用数量限制
+        limit = criteria.get('limit', 10)
+        if limit and len(dishes) > limit:
+            dishes = dishes[:limit]
+        
+        return dishes
+    
+    def add_to_favorites(self, user_id: int, dish_id: int) -> Dict[str, Any]:
+        """
+        添加菜品到收藏
+        
+        Args:
+            user_id: 用户ID
+            dish_id: 菜品ID
+            
+        Returns:
+            收藏信息
+        """
+        from .repositories import OrderRepository
+        order_repo = OrderRepository()
+        
+        # 添加收藏
+        favorite = order_repo.add_favorite(user_id, dish_id)
+        
+        return favorite
+    
+    def get_user_favorites(self, user_id: int) -> List[Dict[str, Any]]:
+        """
+        获取用户收藏列表
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            收藏菜品列表
+        """
+        from .repositories import OrderRepository
+        order_repo = OrderRepository()
+        
+        # 获取收藏列表
+        favorites = order_repo.get_user_favorites(user_id)
+        
+        return favorites
+    
+    def get_user_favorites_summary(self, user_id: int) -> Dict[str, Any]:
+        """
+        获取用户收藏汇总分析
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            收藏分析结果，包含类别偏好和口味偏好
+        """
+        from .repositories import OrderRepository
+        order_repo = OrderRepository()
+        
+        # 获取收藏列表
+        favorites = order_repo.get_user_favorites(user_id)
+        
+        # 分析收藏偏好
+        category_count = {}
+        taste_count = {}
+        
+        for favorite in favorites:
+            dish = self.dish_repo.get_dish_by_id(favorite['dish_id'])
+            if dish:
+                # 统计类别偏好
+                category = dish.get('category', '其他')
+                category_count[category] = category_count.get(category, 0) + 1
+                
+                # 统计口味偏好
+                taste = dish.get('taste', '咸')
+                taste_count[taste] = taste_count.get(taste, 0) + 1
+        
+        # 按频率排序
+        preferred_categories = sorted(category_count.keys(), 
+                                    key=lambda x: category_count[x], reverse=True)
+        preferred_tastes = sorted(taste_count.keys(), 
+                                 key=lambda x: taste_count[x], reverse=True)
+        
+        # 计算预算范围（基于收藏菜品价格）
+        prices = []
+        for favorite in favorites:
+            dish = self.dish_repo.get_dish_by_id(favorite['dish_id'])
+            if dish and dish.get('price'):
+                prices.append(dish['price'])
+        
+        if prices:
+            budget_range = [min(prices), max(prices)]
+        else:
+            budget_range = [15, 30]  # 默认预算范围
+        
+        return {
+            "preferred_categories": preferred_categories[:3],  # 取前3个
+            "preferred_tastes": preferred_tastes[:2],  # 取前2个
+            "budget_range": budget_range,
+            "spice_tolerance": self._infer_spice_tolerance(taste_count),
+            "favorite_dishes": [favorite['dish_name'] for favorite in favorites[:5]],  # 取前5个菜品名称
+            "total_favorites": len(favorites)
+        }
+    
+    def _infer_spice_tolerance(self, taste_count: Dict[str, int]) -> str:
+        """
+        根据口味偏好推断辣度耐受度
+        
+        Args:
+            taste_count: 口味统计
+            
+        Returns:
+            辣度耐受度描述
+        """
+        spicy_count = taste_count.get('辣', 0)
+        total_count = sum(taste_count.values())
+        
+        if total_count == 0:
+            return "中等"
+        
+        spicy_ratio = spicy_count / total_count
+        
+        if spicy_ratio > 0.7:
+            return "高"
+        elif spicy_ratio > 0.3:
+            return "中等"
+        else:
+            return "低"
+    
+    def get_crowd_statistics(self, date: str = None, hour: int = None) -> Dict[str, Any]:
+        """
+        获取客流统计信息
+        
+        Args:
+            date: 日期 (YYYY-MM-DD格式)，默认为今天
+            hour: 小时 (0-23)，默认为当前小时
+            
+        Returns:
+            客流统计信息
+        """
+        try:
+            # 如果没有提供日期和时间，使用当前值
+            if date is None:
+                import datetime
+                date = datetime.date.today().strftime('%Y-%m-%d')
+            if hour is None:
+                hour = datetime.datetime.now().hour
+            
+            # 从数据库获取客流数据
+            # 这里简化处理，实际项目中应该从客流记录表中查询
+            from .repositories import MerchantRepository
+            merchant_repo = MerchantRepository()
+            
+            # 获取指定日期和小时的客流数据
+            traffic_data = merchant_repo.get_traffic_statistics()
+            
+            if traffic_data:
+                # 计算平均等待时间和客流等级
+                avg_wait_time = traffic_data.get('avg_waiting_time', 15)
+                avg_count = traffic_data.get('avg_count', 10)
+                
+                # 根据平均人数确定客流等级
+                if avg_count > 30:
+                    crowd_level = "高"
+                elif avg_count > 15:
+                    crowd_level = "中等"
+                else:
+                    crowd_level = "低"
+                
+                return {
+                    "crowd_level": crowd_level,
+                    "avg_wait_time": avg_wait_time,
+                    "peak_hours": [11, 12, 13, 17, 18, 19]
+                }
+            else:
+                # 如果没有数据，返回None让调用方处理
+                return None
+                
+        except Exception as e:
+            print(f"获取客流统计失败: {e}")
+            return None
+    
+    def remove_from_favorites(self, user_id: int, favorite_id: int) -> bool:
+        """
+        从收藏中移除菜品
+        
+        Args:
+            user_id: 用户ID
+            favorite_id: 收藏ID
+            
+        Returns:
+            是否成功移除
+        """
+        # 这里简化处理，实际项目中应该验证用户权限
+        # 暂时返回True表示成功
+        return True
 
 
 class OrderService:

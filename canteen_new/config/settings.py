@@ -3,6 +3,10 @@ Django settings for canteen_new project.
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +30,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'data',  # 数据模块
+    'ai',   # AI模块
 ]
 
 # REST Framework配置
@@ -83,7 +88,7 @@ DATABASES = {
             'ENGINE': 'django.db.backends.mysql',
             'NAME': 'canteen', #更改为本地数据库名称
             'USER': 'root', #更改为用户名
-            'PASSWORD': '201201375', #更改为本地数据库密码
+            'PASSWORD': 'test', #更改为本地数据库密码
             'HOST': 'localhost',
             'PORT': '3306',
             'OPTIONS': {

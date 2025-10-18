@@ -133,11 +133,20 @@ export const ordersAPI = {
   // 下单菜品
   createOrder: (data) => api.post('/orders/create/', data),
   
+  // 获取订单列表
+  getOrders: () => api.get('/user/orders/')
+}
+
+// 收藏相关API
+export const favoritesAPI = {
   // 收藏菜品
   addFavorite: (data) => api.post('/favorites/add/', data),
   
-  // 获取订单列表
-  getOrders: () => api.get('/user/orders/')
+  // 获取收藏列表
+  getFavorites: () => api.get('/favorites/'),
+  
+  // 移除收藏
+  removeFavorite: (favoriteId) => api.delete(`/favorites/${favoriteId}/`)
 }
 
 // 商家管理API
