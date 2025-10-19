@@ -7,8 +7,14 @@
       </div>
       <nav class="nav">
         <a href="#" class="nav-link active">{{ $t('navHome') }}</a>
-        <a href="#" class="nav-link">{{ $t('navExplore') }}</a>
-        <a href="#" class="nav-link">{{ $t('navNavigation') }}</a>
+        <!-- 新增核心功能导航 -->
+        <a href="#features" class="nav-link" @click.prevent="scrollToSection('features')">
+          {{ $t('coreFeatures') }}
+        </a>
+        <!-- 新增美食助手导航 -->
+        <a href="#ai-assistant" class="nav-link" @click.prevent="scrollToSection('ai-assistant')">
+          {{ $t('aiFoodAssistant') }}
+        </a>
       </nav>
       <div class="header-actions">
         <button class="icon-btn notification-btn" @click="showNotification">
@@ -121,6 +127,30 @@ export default {
     }
   },
   methods: {
+    // 新增滚动到指定区域的方法
+    scrollToSection(sectionId) {
+      const element = document.getElementById(sectionId)
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        })
+        
+        // 更新导航激活状态
+        this.updateActiveNav(sectionId)
+      }
+    },
+    
+    // 更新导航激活状态
+    updateActiveNav(activeSection) {
+      const navLinks = document.querySelectorAll('.nav-link')
+      navLinks.forEach(link => {
+        link.classList.remove('active')
+        if (link.getAttribute('href') === `#${activeSection}`) {
+          link.classList.add('active')
+        }
+      })
+    },
     showNotification() {
       alert(this.$t('noNewMessages'))
     },

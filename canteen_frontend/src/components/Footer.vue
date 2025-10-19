@@ -10,8 +10,12 @@
           <h4>{{ $t('quickLinks') }}</h4>
           <ul>
             <li><a href="#">{{ $t('home') }}</a></li>
-            <li><a href="#">{{ $t('explore') }}</a></li>
-            <li><a href="#">{{ $t('navigation') }}</a></li>
+            <li><a href="#features" @click.prevent="scrollToSection('features')">
+              {{ $t('coreFeatures') }}  <!-- 改为使用翻译变量 -->
+            </a></li>
+            <li><a href="#ai-assistant" @click.prevent="scrollToSection('ai-assistant')">
+              {{ $t('aiFoodAssistant') }}  <!-- 改为使用翻译变量 -->
+            </a></li>
             <li><a href="#">{{ $t('about') }}</a></li>
           </ul>
         </div>
@@ -33,7 +37,25 @@
 
 <script>
 export default {
-  name: 'AppFooter'
+  name: 'AppFooter',
+  methods: {
+  scrollToTop() {
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    },
+    
+    scrollToSection(sectionId) {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    }
+  }
 }
 </script>
 
