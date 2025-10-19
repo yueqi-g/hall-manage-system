@@ -1,4 +1,5 @@
 // 语言配置文件
+/* eslint-disable no-dupe-keys */
 export const messages = {
   'zh-CN': {
     // 通用
@@ -8,8 +9,6 @@ export const messages = {
     logout: '退出登录',
     search: '搜索',
     home: '首页',
-    explore: '菜品探索',
-    navigation: '食堂导航',
     about: '关于我们',
     contact: '联系我们',
     favorites: '我的收藏',
@@ -21,8 +20,8 @@ export const messages = {
     // Header
     logo: '美食食堂终端',
     navHome: '首页',
-    navExplore: '菜品探索',
-    navNavigation: '食堂导航',
+    coreFeatures: '核心功能',
+    aiFoodAssistant: 'AI美食助手',
     loginRegister: '登录/注册',
     myFavorites: '我的收藏',
     myOrders: '我的订单',
@@ -57,6 +56,8 @@ export const messages = {
     // Footer
     footerDescription: '智能推荐校园美食，优化用餐体验',
     quickLinks: '快速链接',
+    coreFeatures: '核心功能',
+    aiFoodAssistant: 'AI美食助手',
     contactUs: '联系我们',
     copyright: '版权所有',
     
@@ -145,8 +146,6 @@ export const messages = {
     logout: '登出',
     search: '搜尋',
     home: '首頁',
-    explore: '菜品探索',
-    navigation: '食堂導航',
     about: '關於我們',
     contact: '聯絡我們',
     favorites: '我的收藏',
@@ -158,8 +157,8 @@ export const messages = {
     // Header
     logo: '美食食堂終端',
     navHome: '首頁',
-    navExplore: '菜品探索',
-    navNavigation: '食堂導航',
+    coreFeatures: '核心功能',
+    aiFoodAssistant: 'AI美食助手',
     loginRegister: '登入/註冊',
     myFavorites: '我的收藏',
     myOrders: '我的訂單',
@@ -194,6 +193,8 @@ export const messages = {
     // Footer
     footerDescription: '智能推薦校園美食，優化用餐體驗',
     quickLinks: '快速連結',
+    coreFeatures: '核心功能',
+    aiFoodAssistant: 'AI美食助手',
     contactUs: '聯絡我們',
     copyright: '版權所有',
     
@@ -282,8 +283,6 @@ export const messages = {
     logout: 'Logout',
     search: 'Search',
     home: 'Home',
-    explore: 'Dish Exploration',
-    navigation: 'Canteen Navigation',
     about: 'About Us',
     contact: 'Contact Us',
     favorites: 'My Favorites',
@@ -295,8 +294,8 @@ export const messages = {
     // Header
     logo: 'Canteen Food Terminal',
     navHome: 'Home',
-    navExplore: 'Dish Exploration',
-    navNavigation: 'Canteen Navigation',
+    coreFeatures: 'Core Features',
+    aiFoodAssistant: 'AI Food Assistant',
     loginRegister: 'Login/Register',
     myFavorites: 'My Favorites',
     myOrders: 'My Orders',
@@ -331,6 +330,8 @@ export const messages = {
     // Footer
     footerDescription: 'Smart campus food recommendations to optimize dining experience',
     quickLinks: 'Quick Links',
+    coreFeatures: 'Core Features',
+    aiFoodAssistant: 'AI Food Assistant',
     contactUs: 'Contact Us',
     copyright: 'All Rights Reserved',
     
