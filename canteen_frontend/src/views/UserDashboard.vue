@@ -195,7 +195,7 @@
       </section>
 
       <!-- 功能区域 -->
-      <section class="features">
+      <section class="features" id="features">
         <div class="container">
           <h2 class="section-title">{{ $t('coreFeatures') }}</h2>
           <div class="features-grid">
@@ -211,7 +211,7 @@
       </section>
 
       <!-- 热门推荐和AI助手区域 -->
-      <section class="recommendation-section">
+      <section class="recommendation-section" id="ai-assistant">
         <div class="container">
           <div class="section-header">
             <h2 class="section-title">{{ $t('aiFoodAssistant') }}</h2>
