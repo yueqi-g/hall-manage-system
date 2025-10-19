@@ -123,7 +123,7 @@ export const messages = {
     aiAssistantIntro: '您好！我是您的AI美食助手',
     aiAssistantDescription: '告诉我您的口味偏好和预算，我可以为您推荐合适的美食！',
     aiAssistantPrompt: '您好！请告诉我您想吃什么类型的美食？比如口味偏好、预算范围等。',
-    inputExample: '例如：我想吃辣的面食，预',
+    inputExample: '例如：我想吃辣的面食',
     inputPlaceholder: '输入您想吃的美食...',
     examples: '示例：',
     todayHotRecommendations: '今日热门推荐',

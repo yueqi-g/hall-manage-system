@@ -16,7 +16,9 @@ class ContextService:
     
     def __init__(self):
         self.weather_api_key = os.getenv('WEATHER_API_KEY')
-        self.weather_api_url = "https://api.openweathermap.org/data/2.5/weather"
+        self.weather_api_provider = os.getenv('WEATHER_API_PROVIDER', 'gaode')
+        self.weather_city = os.getenv('WEATHER_CITY', '北京')
+        self.weather_api_url = "https://restapi.amap.com/v3/weather/weatherInfo"
     
     def get_situational_festival_info(self, target_date: datetime.date = None) -> List[str]:
         """
@@ -124,7 +126,7 @@ class ContextService:
     def get_weather_info(self) -> Dict[str, Any]:
         """
         获取天气信息
-        使用OpenWeatherMap API获取真实天气数据
+        使用高德天气API获取真实天气数据
         
         Returns:
             天气信息字典
@@ -141,12 +143,12 @@ class ContextService:
             }
         
         try:
-            # 调用OpenWeatherMap API (示例使用北京)
+            # 调用高德天气API
             params = {
-                'q': 'Beijing,CN',
-                'appid': self.weather_api_key,
-                'units': 'metric',
-                'lang': 'zh_cn'
+                'key': self.weather_api_key,
+                'city': self.weather_city,
+                'extensions': 'base',  # base: 实时天气, all: 预报天气
+                'output': 'JSON'
             }
             
             response = requests.get(self.weather_api_url, params=params, timeout=10)
@@ -154,23 +156,31 @@ class ContextService:
             if response.status_code == 200:
                 data = response.json()
                 
-                # 解析天气数据
-                weather_main = data['weather'][0]['main']
-                weather_description = data['weather'][0]['description']
-                temperature = data['main']['temp']
-                humidity = data['main']['humidity']
-                wind_speed = data['wind']['speed']
-                
-                # 将风速转换为风力等级
-                wind_level = self._convert_wind_speed_to_level(wind_speed)
-                
-                return {
-                    "weather": weather_description,
-                    "temperature": round(temperature),
-                    "season": self._get_season(datetime.date.today()),
-                    "humidity": humidity,
-                    "wind_level": wind_level
-                }
+                # 检查API返回状态
+                if data.get('status') == '1' and data.get('lives'):
+                    weather_data = data['lives'][0]
+                    
+                    # 解析天气数据
+                    weather = weather_data.get('weather', '未知')
+                    temperature = int(weather_data.get('temperature', 0))
+                    humidity = int(weather_data.get('humidity', 0))
+                    wind_direction = weather_data.get('winddirection', '未知')
+                    wind_power = weather_data.get('windpower', '0级')
+                    
+                    # 将风力等级转换为数字
+                    wind_level = self._convert_wind_power_to_level(wind_power)
+                    
+                    return {
+                        "weather": weather,
+                        "temperature": temperature,
+                        "season": self._get_season(datetime.date.today()),
+                        "humidity": humidity,
+                        "wind_level": wind_level,
+                        "wind_direction": wind_direction
+                    }
+                else:
+                    print(f"高德天气API返回错误: {data.get('info', '未知错误')}")
+                    return self._get_fallback_weather_data()
             else:
                 print(f"天气API调用失败: {response.status_code}")
                 return self._get_fallback_weather_data()
@@ -368,6 +378,21 @@ class ContextService:
             return 11
         else:
             return 12
+    
+    def _convert_wind_power_to_level(self, wind_power: str) -> int:
+        """将高德天气的风力描述转换为风力等级"""
+        # 高德天气返回的风力格式如："3-4级", "5-6级", "微风"等
+        if not wind_power or wind_power == '微风':
+            return 1
+        
+        # 提取数字部分
+        import re
+        numbers = re.findall(r'\d+', wind_power)
+        if numbers:
+            # 取第一个数字作为风力等级
+            return int(numbers[0])
+        else:
+            return 1
 
 
 # 测试函数

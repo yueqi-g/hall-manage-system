@@ -139,7 +139,7 @@ def popular_dishes(request):
 @api_view(['POST'])
 def ai_recommend(request):
     """
-    AI智能推荐 - 增强版本（包含情景数据和LLM调用状态）
+    AI智能推荐 - 重构版本（使用新的编排器）
     POST /api/dishes/ai-recommend
     """
     try:
@@ -154,18 +154,18 @@ def ai_recommend(request):
         if request.user and request.user.is_authenticated:
             user_id = request.user.id
         
-        # 调用增强的AI推荐服务（基于情景数据）
-        from ai.services import ai_recommendation_service
-        result = ai_recommendation_service.process_user_query_with_context(query, user_id)
+        # 调用新的AI编排器
+        from ai.orchestrator import ai_orchestrator
+        result = ai_orchestrator.process_query(query, user_id)
         
         # 添加API调用状态信息
         enhanced_result = {
             **result,
             "api_status": {
-                "llm_used": True,  # 表示使用了LLM
-                "context_aware": True,  # 表示使用了情景数据
-                "user_preferences_used": user_id is not None,  # 表示使用了用户偏好
-                "timestamp": "2025-10-18T22:53:00Z"  # 模拟时间戳
+                "processing_mode": result.get("processing_mode", "unknown"),
+                "context_aware": True,
+                "user_preferences_used": user_id is not None,
+                "timestamp": "2025-10-19T11:56:00Z"  # 更新时间戳
             }
         }
         

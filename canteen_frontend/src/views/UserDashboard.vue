@@ -21,7 +21,7 @@
                   @input="handleSearchInput"
                   @keyup.enter="handleSearch"
                   @focus="showSuggestions = searchSuggestions.length > 0"
-                  @blur="setTimeout(() => showSuggestions = false, 200)"
+                  @blur="handleSearchBlur"
                 >
                 <!-- 搜索建议下拉框 -->
                 <div v-if="showSuggestions && searchSuggestions.length > 0" class="search-suggestions">
@@ -233,7 +233,7 @@
               </div>
               
               <div class="ai-chat-container">
-                <div class="chat-messages" ref="chatMessages">
+                <div class="chat-messages" ref="chatMessages" style="max-height: 300px; overflow-y: auto;">
                   <div class="message ai-message">
                     <div class="message-content">
                       <p>{{ $t('aiAssistantPrompt') }}</p>
@@ -406,8 +406,7 @@ export default {
       aiInput: '',
       exampleQuestions: [
         '我想吃辣的面食，价格实惠的',
-        '推荐清淡的粤菜，人均100-200元',
-        '适合情侣约会的西餐厅'
+        '我赶时间，在一食堂有哪些推荐的菜'
       ],
       popularDishes: [
         {
@@ -502,30 +501,41 @@ export default {
       this.handleSearch()
     },
     
-    // 菜品搜索 - 使用Vue Router跳转
+    // 顶部搜索框搜索 - 跳转到AI对话框
     async handleSearch() {
       if (!this.searchQuery.trim()) return
       
       this.showSuggestions = false
-      console.log('开始菜品搜索:', this.searchQuery)
+      console.log('顶部搜索框搜索:', this.searchQuery)
       
-      try {
-        // 使用Vue Router进行页面跳转，保持SPA体验
-        const queryParams = {
-          q: this.searchQuery,
-          type: 'keyword'
-        }
-        
-        this.$router.push({
-          path: '/search',
-          query: queryParams
+      // 滚动到AI助手区域
+      this.scrollToAIAssistant()
+      
+      // 设置AI输入框内容
+      this.aiInput = this.searchQuery
+      
+      // 延迟执行AI消息处理，确保滚动完成
+      setTimeout(() => {
+        this.handleAIMessage()
+      }, 500)
+    },
+    
+    // 滚动到AI助手区域
+    scrollToAIAssistant() {
+      const aiAssistantSection = document.querySelector('.ai-assistant-side')
+      if (aiAssistantSection) {
+        aiAssistantSection.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
         })
-        
-      } catch (error) {
-        console.error('搜索跳转失败:', error)
-        // 备用方案：使用编程式导航
-        this.$router.push('/search')
       }
+    },
+    
+    // 处理搜索框失去焦点
+    handleSearchBlur() {
+      setTimeout(() => {
+        this.showSuggestions = false
+      }, 200)
     },
     
     toggleFlavor(flavor) {
@@ -758,15 +768,14 @@ export default {
         
         if (response.success) {
           // 显示API调用状态
-          const apiStatus = response.data.context_data ? '真实LLM调用' : '模拟模式'
+          const apiStatus = response.data.context_data ? '大模型推荐仅供参考' : 'ai连接失败，根据您的要求搜索'
           const aiResponse = this.formatAIResponse(response.data, apiStatus)
           
           // 传递完整的响应数据给消息显示
           const dishes = response.data.dishes || []
           const reasons = response.data.reasons || []
-          const contextData = response.data.context_data || {}
           
-          this.addMessage(aiResponse, 'ai', dishes, reasons, contextData, apiStatus)
+          this.addMessage(aiResponse, 'ai', dishes, reasons, apiStatus)
         } else {
           this.addMessage('抱歉，AI推荐服务暂时不可用，请稍后再试。', 'ai')
         }
@@ -829,21 +838,9 @@ export default {
       }
       
       if (data.type === 'recommendation') {
-        let response = data.content + '\n\n'
-        
-        if (data.dishes && data.dishes.length > 0) {
-          data.dishes.forEach((dish, index) => {
-            response += `${index + 1}. ${dish.name} (${dish.canteen || dish.store_name}) - ¥${dish.price}\n`
-            if (data.reasons && data.reasons[index]) {
-              response += `   推荐理由: ${data.reasons[index]}\n`
-            }
-            response += `   口味: ${dish.taste} | 评分: ${dish.rating}\n\n`
-          })
-        } else {
-          response = '抱歉，没有找到符合您需求的菜品，请尝试调整您的搜索条件。'
-        }
-        
-        return response
+        // 直接返回AI生成的推荐文本，不添加额外的菜品信息
+        // 菜品信息会在addMessage方法中单独显示
+        return data.content
       }
       
       if (data.type === 'error') {
@@ -853,7 +850,7 @@ export default {
       return '抱歉，AI推荐服务暂时不可用，请稍后再试。'
     },
     
-    addMessage(text, type, dishes = null) {
+    addMessage(text, type, dishes = null, reasons = [], apiStatus = '') {
       const chatMessages = this.$refs.chatMessages
       if (!chatMessages) return
       
@@ -863,39 +860,49 @@ export default {
       if (type === 'user') {
         messageDiv.innerHTML = `
           <div class="message-content">
-            <p>${text}</p>
+            <div class="user-input-container">
+              <div class="user-input-icon">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-input-text">
+                <p>${text}</p>
+              </div>
+            </div>
           </div>
         `
       } else {
         let content = `<div class="message-content"><p>${text}</p>`
         
-        // 如果有菜品数据，添加菜品展示区域
+        // 如果有菜品数据，添加简化版菜品展示区域
         if (dishes && dishes.length > 0) {
           content += `
             <div class="ai-dishes-container">
-              <div class="ai-dishes-grid">
-                ${dishes.map(dish => `
-                  <div class="ai-dish-card" data-dish-id="${dish.id}">
+              <div class="ai-dishes-list">
+                ${dishes.map((dish, index) => `
+                  <div class="ai-dish-item" data-dish-id="${dish.id}">
                     <div class="ai-dish-image" style="background: ${this.getRandomGradient()}">
-                      <div class="ai-dish-rating">
-                        <i class="fas fa-star"></i> ${dish.rating}
-                      </div>
                       <i class="${this.getDishIcon(dish.category)}"></i>
                     </div>
-                    <div class="ai-dish-info">
-                      <h4 class="ai-dish-name">${dish.name}</h4>
-                      <p class="ai-dish-price">¥${dish.price}</p>
-                      <p class="ai-dish-description">${dish.description}</p>
-                      <div class="ai-dish-meta">
-                        <span class="ai-dish-taste">${dish.taste}</span>
+                    <div class="ai-dish-content">
+                      <div class="ai-dish-header">
+                        <span class="ai-dish-name">${dish.name}</span>
+                        <span class="ai-dish-price">¥${dish.price}</span>
+                      </div>
+                      <div class="ai-dish-details">
+                        <span class="ai-dish-description">${dish.description}</span>
                         <span class="ai-dish-canteen">${dish.canteen || dish.store_name}</span>
                       </div>
+                      ${reasons && reasons[index] ? `
+                      <div class="ai-dish-reason">
+                        <i class="fas fa-lightbulb"></i> ${reasons[index]}
+                      </div>
+                      ` : ''}
                       <div class="ai-dish-actions">
-                        <button class="ai-dish-btn ai-order-btn" onclick="this.closest('.ai-dish-card').dispatchEvent(new CustomEvent('orderDish', {detail: ${dish.id}, bubbles: true}))">
-                          <i class="fas fa-utensils"></i> 下单
+                        <button class="ai-dish-action-btn ai-order-btn">
+                          <i class="fas fa-utensils"></i> 立即下单
                         </button>
-                        <button class="ai-dish-btn ai-favorite-btn" onclick="this.closest('.ai-dish-card').dispatchEvent(new CustomEvent('favoriteDish', {detail: ${dish.id}, bubbles: true}))">
-                          <i class="fas fa-heart"></i> 收藏
+                        <button class="ai-dish-action-btn ai-favorite-btn">
+                          <i class="fas fa-heart"></i> 添加收藏
                         </button>
                       </div>
                     </div>
@@ -906,16 +913,27 @@ export default {
           `
         }
         
+        // 添加API状态信息（调试用）
+        if (apiStatus) {
+          content += `<div class="api-status">${apiStatus}</div>`
+        }
+        
         content += '</div>'
         messageDiv.innerHTML = content
         
         // 添加事件监听器
         if (dishes && dishes.length > 0) {
-          messageDiv.addEventListener('orderDish', (e) => {
-            this.orderDish(e.detail)
-          })
-          messageDiv.addEventListener('favoriteDish', (e) => {
-            this.addToFavorites(e.detail)
+          const actionButtons = messageDiv.querySelectorAll('.ai-dish-action-btn')
+          actionButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+              const dishItem = e.target.closest('.ai-dish-item')
+              const dishId = dishItem.dataset.dishId
+              if (e.target.closest('.ai-order-btn')) {
+                this.orderDish(dishId)
+              } else if (e.target.closest('.ai-favorite-btn')) {
+                this.addToFavorites(dishId)
+              }
+            })
           })
         }
       }
@@ -1296,9 +1314,9 @@ export default {
 
 /* AI聊天框菜品展示样式 */
 .ai-dishes-container {
-  margin-top: 15px;
+  margin-top: 8px;
   border-top: 1px solid #e9ecef;
-  padding-top: 15px;
+  padding-top: 8px;
 }
 
 .ai-dishes-grid {
@@ -1433,6 +1451,219 @@ export default {
 .ai-favorite-btn:hover {
   background: #545b62;
   transform: translateY(-1px);
+}
+
+/* 简化版AI聊天框菜品展示样式 */
+.ai-dishes-container {
+  margin-top: 8px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 8px;
+}
+
+.ai-dishes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-dish-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.ai-dish-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.ai-dish-image {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.ai-dish-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-dish-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ai-dish-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.ai-dish-price {
+  font-size: 0.95rem;
+  font-weight: bold;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.ai-dish-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.ai-dish-description {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.ai-dish-canteen {
+  background: #f8f9fa;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  color: #495057;
+  margin-left: 8px;
+}
+
+.ai-dish-reason {
+  font-size: 0.75rem;
+  color: #28a745;
+  background: #f0fff4;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-left: 3px solid #28a745;
+}
+
+.ai-dish-reason i {
+  color: #28a745;
+  font-size: 0.7rem;
+}
+
+.ai-dish-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.ai-dish-action-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.ai-order-btn {
+  background: #28a745;
+  color: white;
+}
+
+.ai-order-btn:hover {
+  background: #1e7e34;
+}
+
+.ai-favorite-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.ai-favorite-btn:hover {
+  background: #545b62;
+}
+
+/* 用户输入框样式 */
+.user-input-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.user-input-icon {
+  width: 32px;
+  height: 32px;
+  background: #007bff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.user-input-text {
+  flex: 1;
+}
+
+.user-input-text p {
+  margin: 0;
+  color: #2c3e50;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* API状态信息样式 */
+.api-status {
+  font-size: 0.7rem;
+  color: #6c757d;
+  text-align: right;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: rgba(108, 117, 125, 0.1);
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 100%;
+  word-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* AI消息容器样式 */
+.message.ai-message .message-content {
+  position: relative;
+  padding-bottom: 8px; /* 为状态信息预留空间 */
+}
+
+.message.ai-message .message-content > p {
+  margin-bottom: 4px;
 }
 
 /* 响应式设计 */

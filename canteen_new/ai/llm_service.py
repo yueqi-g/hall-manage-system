@@ -1,6 +1,6 @@
 """
-LLM服务模块
-集成真实LLM调用和用户收藏分析
+简化的LLM服务
+专注于LLM通信，移除参数提取等重复逻辑
 """
 import json
 import os
@@ -8,11 +8,10 @@ from typing import Dict, Any, List, Optional
 from openai import OpenAI
 from config.llm_config import llm_config
 from .utils import GET_DISHES_SCHEMA, validate_tool_arguments, get_dishes_by_criteria
-from data.services import dish_service
 
 
 class LLMService:
-    """LLM服务类"""
+    """简化的LLM服务 - 专注于LLM通信"""
     
     def __init__(self):
         self.client = None
@@ -35,6 +34,82 @@ class LLMService:
             except Exception as e:
                 print(f"LLM服务: 客户端设置失败，使用模拟模式 - {e}")
                 self.client = None
+    
+    def is_available(self) -> bool:
+        """检查LLM是否可用"""
+        return self.client is not None
+    
+    def enhance_with_context(self, user_query: str, initial_params: Dict, context_data: Dict) -> Dict[str, Any]:
+        """
+        使用LLM结合情景数据增强初始判断
+        
+        Args:
+            user_query: 用户原始输入
+            initial_params: 初始判断参数
+            context_data: 情景数据
+            
+        Returns:
+            增强后的推荐结果
+        """
+        print(f"=== LLM增强处理调试 ===")
+        print(f"用户查询: {user_query}")
+        print(f"初始参数: {initial_params}")
+        print(f"情景数据: {context_data}")
+        
+        try:
+            # 构建系统提示
+            system_prompt = self._build_enhancement_prompt(initial_params, context_data)
+            
+            # 构建消息
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_query}
+            ]
+            
+            # 调用LLM
+            response = self.call_llm_with_tools(messages, [GET_DISHES_SCHEMA])
+            
+            # 处理LLM响应
+            return self._process_llm_response(response, user_query, context_data)
+            
+        except Exception as e:
+            print(f"LLM增强处理失败: {e}")
+            return self._create_fallback_response(user_query, initial_params, context_data)
+    
+    def _build_enhancement_prompt(self, initial_params: Dict, context_data: Dict) -> str:
+        """构建增强处理的系统提示"""
+        date_info = context_data["date_info"]
+        weather_info = context_data["weather_info"]
+        crowd_info = context_data["crowd_info"]
+        
+        prompt = f"""
+你是一个智能食堂菜品推荐助手。请根据以下信息为用户推荐合适的菜品：
+
+## 当前情景数据
+- **日期**：{date_info['current_date']}，{date_info['current_season']}季节，{'周末' if date_info['is_weekend'] else '工作日'}
+- **节日**：{', '.join(date_info['festival_tags'])}
+- **天气**：{weather_info['weather']}，温度{weather_info['temperature']}°C
+- **客流**：{crowd_info['crowd_level']}，平均等待时间{crowd_info['avg_wait_time']}分钟
+
+## 初始判断参数（必须尊重）
+基于用户查询提取的初始判断参数：
+{json.dumps(initial_params, ensure_ascii=False, indent=2)}
+
+## 执行规则
+1. **必须调用工具函数**：使用get_dishes_by_criteria函数查询菜品
+2. **尊重初始判断**：如果情景数据与初始判断冲突，以初始判断为准
+3. **合理增强**：基于情景数据合理调整参数，但不能删除初始参数
+4. **生成友好回复**：在工具调用后，生成用户友好的回复文本
+
+## 参数调整指南
+- 寒冷天气({weather_info['temperature']}°C)：可适当增加辣度或推荐热食
+- 炎热天气：可推荐清淡菜品
+- 高客流：可设置max_wait_time限制
+- 节日：可推荐相关特色菜品
+
+请根据用户查询，结合初始判断和情景数据，调用工具函数并生成友好的回复。
+"""
+        return prompt
     
     def call_llm_with_tools(self, messages: List[Dict], tools: List[Dict], 
                           temperature: float = 0.7, max_tokens: int = 2000):
@@ -69,230 +144,147 @@ class LLMService:
             return self._mock_llm_call(messages, tools)
     
     def _mock_llm_call(self, messages: List[Dict], tools: List[Dict]):
-        """模拟LLM调用 - 增强版，结合情景数据"""
+        """模拟LLM调用 - 简化版本"""
         user_message = messages[-1]['content']
         system_message = messages[0]['content'] if messages and messages[0]['role'] == 'system' else ""
-        user_query = user_message.lower()
         
-        # 检查是否需要调用工具函数
-        should_call_tool = any(keyword in user_query for keyword in [
-            '推荐', '想吃', '找', '搜索', '查询', '辣', '咸', '淡', '酸甜',
-            '价格', '评分', '面', '饭', '饺子', '菜品', '菜'
-        ])
-        
-        if should_call_tool:
-            # 增强版参数提取：结合情景数据
-            tool_args = self._extract_enhanced_parameters(user_message, system_message)
-            
-            return type('MockResponse', (), {
-                'choices': [type('MockChoice', (), {
-                    'message': type('MockMessage', (), {
-                        'tool_calls': [type('MockToolCall', (), {
-                            'function': type('MockFunction', (), {
-                                'name': "get_dishes_by_criteria",
-                                'arguments': json.dumps(tool_args, ensure_ascii=False)
-                            })
-                        })]
-                    })
-                })]
-            })()
-        else:
-            # 模拟直接回复
-            return type('MockResponse', (), {
-                'choices': [type('MockChoice', (), {
-                    'message': type('MockMessage', (), {
-                        'content': "我是食堂菜品推荐助手，请问您想吃什么类型的菜品？我可以帮您推荐。"
-                    })
-                })]
-            })()
-    
-    def _extract_enhanced_parameters(self, user_query: str, system_message: str) -> Dict[str, Any]:
-        """增强版参数提取：结合情景数据"""
-        # 基础参数提取
-        params = self._extract_parameters_from_query(user_query)
-        
-        # 从系统提示中提取情景数据
-        context_data = self._extract_context_from_system_prompt(system_message)
-        
-        # 基于情景数据增强参数
-        if context_data:
-            params = self._enhance_parameters_with_context(params, context_data)
-        
-        return params
-    
-    def _extract_context_from_system_prompt(self, system_message: str) -> Dict[str, Any]:
-        """从系统提示中提取情景数据"""
-        if not system_message:
-            return {}
-        
-        context_data = {}
-        
-        # 提取温度信息
+        # 简单的模拟逻辑：直接使用初始参数
         import re
-        temp_match = re.search(r'温度(\d+)°C', system_message)
-        if temp_match:
-            context_data['temperature'] = int(temp_match.group(1))
-        
-        # 提取季节信息
-        season_match = re.search(r'(\w+)季节', system_message)
-        if season_match:
-            context_data['season'] = season_match.group(1)
-        
-        # 提取天气信息
-        weather_match = re.search(r'天气：([^，]+)', system_message)
-        if weather_match:
-            context_data['weather'] = weather_match.group(1)
-        
-        # 提取客流信息
-        crowd_match = re.search(r'客流：([^，]+)', system_message)
-        if crowd_match:
-            context_data['crowd_level'] = crowd_match.group(1)
-        
-        # 提取时间信息
-        if '周末' in system_message:
-            context_data['is_weekend'] = True
-        elif '工作日' in system_message:
-            context_data['is_weekend'] = False
-        
-        return context_data
-    
-    def _enhance_parameters_with_context(self, params: Dict, context_data: Dict) -> Dict[str, Any]:
-        """基于情景数据增强参数"""
-        # 基于温度调整口味和辣度
-        temperature = context_data.get('temperature', 0)
-        if temperature < 15:
-            # 寒冷天气：推荐辣味暖身
-            if 'taste' not in params:
-                params['taste'] = '辣'
-            if 'spice_level' not in params:
-                params['spice_level'] = 3
-            # 推荐热食类
-            if 'category' not in params:
-                params['category'] = '饭'
-        elif temperature > 25:
-            # 炎热天气：推荐清淡清爽
-            if 'taste' not in params:
-                params['taste'] = '淡'
-            # 推荐凉菜类
-            if 'category' not in params:
-                params['category'] = '其他'
-        
-        # 基于季节调整
-        season = context_data.get('season', '')
-        if season == '冬季':
-            if 'taste' not in params:
-                params['taste'] = '辣'
-        elif season == '夏季':
-            if 'taste' not in params:
-                params['taste'] = '淡'
-        
-        # 基于客流调整等待时间
-        crowd_level = context_data.get('crowd_level', '')
-        if crowd_level == '高':
-            params['max_wait_time'] = 15
-        
-        # 基于时间调整
-        if context_data.get('is_weekend'):
-            # 周末推荐特色菜
-            if 'sort_by' not in params:
-                params['sort_by'] = 'rating'
+        initial_params_match = re.search(r'初始判断参数：\s*({.*?})', system_message, re.DOTALL)
+        if initial_params_match:
+            initial_params_str = initial_params_match.group(1)
+            try:
+                tool_args = json.loads(initial_params_str)
+            except:
+                tool_args = {}
         else:
-            # 工作日推荐快速出餐
-            if 'max_wait_time' not in params:
-                params['max_wait_time'] = 15
+            tool_args = {}
         
-        return params
+        # 添加一些基于情景数据的简单增强
+        if "寒冷天气" in system_message and "taste" not in tool_args:
+            tool_args["taste"] = "辣"
+        if "高客流" in system_message and "max_wait_time" not in tool_args:
+            tool_args["max_wait_time"] = 15
+        
+        return type('MockResponse', (), {
+            'choices': [type('MockChoice', (), {
+                'message': type('MockMessage', (), {
+                    'tool_calls': [type('MockToolCall', (), {
+                        'function': type('MockFunction', (), {
+                            'name': "get_dishes_by_criteria",
+                            'arguments': json.dumps(tool_args, ensure_ascii=False)
+                        })
+                    })],
+                    'content': f"基于当前情景和您的需求，为您推荐以下菜品："
+                })
+            })]
+        })()
     
-    def _extract_parameters_from_query(self, user_query: str) -> Dict[str, Any]:
-        """从用户查询中提取参数"""
-        query_lower = user_query.lower()
-        params = {}
-        
-        # 提取分类
-        if '面' in query_lower:
-            params['category'] = '面'
-        elif '饭' in query_lower:
-            params['category'] = '饭'
-        elif '饺子' in query_lower:
-            params['category'] = '饺子'
-        
-        # 提取口味
-        if '辣' in query_lower:
-            params['taste'] = '辣'
-            if '特辣' in query_lower or '很辣' in query_lower:
-                params['spice_level'] = 5
-            elif '中辣' in query_lower:
-                params['spice_level'] = 3
-            elif '微辣' in query_lower:
-                params['spice_level'] = 1
-            else:
-                params['spice_level'] = 2
-        elif '咸' in query_lower:
-            params['taste'] = '咸'
-        elif '淡' in query_lower:
-            params['taste'] = '淡'
-        elif '酸甜' in query_lower:
-            params['taste'] = '酸甜'
-        
-        # 提取价格范围
-        if '便宜' in query_lower or '实惠' in query_lower:
-            params['min_price'] = 0
-            params['max_price'] = 20
-        elif '中等' in query_lower:
-            params['min_price'] = 15
-            params['max_price'] = 35
-        elif '贵' in query_lower or '高档' in query_lower:
-            params['min_price'] = 30
-            params['max_price'] = 100
-        
-        # 提取具体价格
-        import re
-        price_pattern = r'(\d+)[元块]'
-        prices = re.findall(price_pattern, user_query)
-        if len(prices) == 1:
-            price = int(prices[0])
-            params['max_price'] = price
-        elif len(prices) >= 2:
-            params['min_price'] = min(int(prices[0]), int(prices[1]))
-            params['max_price'] = max(int(prices[0]), int(prices[1]))
-        
-        # 设置默认限制
-        params['limit'] = 5
-        
-        return params
-    
-    def get_user_preferences_summary(self, user_id: Optional[int] = None) -> Dict[str, Any]:
-        """
-        获取用户偏好汇总
-        
-        Args:
-            user_id: 用户ID
-            
-        Returns:
-            用户偏好汇总
-        """
-        if user_id is None:
-            # 返回通用偏好
-            return {
-                "preferred_categories": ["饭", "面"],
-                "preferred_tastes": ["咸", "辣"],
-                "budget_range": [15, 30],
-                "spice_tolerance": "中等"
-            }
-        
+    def _process_llm_response(self, response, user_query: str, context_data: Dict) -> Dict[str, Any]:
+        """处理LLM响应"""
         try:
-            # 获取用户收藏分析
-            favorites_summary = dish_service.get_user_favorites_summary(user_id)
-            return favorites_summary
-        except Exception as e:
-            print(f"获取用户偏好失败: {e}")
-            # 返回默认偏好
+            # 检查是否调用了工具函数
+            if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+                tool_call = response.choices[0].message.tool_calls[0]
+                
+                if tool_call.function.name == "get_dishes_by_criteria":
+                    # 解析参数
+                    tool_args = json.loads(tool_call.function.arguments)
+                    print(f"LLM生成的参数: {tool_args}")
+                    
+                    # 验证参数
+                    validated_args = validate_tool_arguments(tool_args)
+                    
+                    # 执行查询
+                    dishes = get_dishes_by_criteria(**validated_args)
+                    
+                    # 生成响应
+                    return self._generate_llm_response(dishes, user_query, context_data, response.choices[0].message.content)
+            
+            # 如果没有调用工具，返回聊天响应
             return {
-                "preferred_categories": ["饭", "面"],
-                "preferred_tastes": ["咸", "辣"],
-                "budget_range": [15, 30],
-                "spice_tolerance": "中等"
+                "type": "chat_response",
+                "content": response.choices[0].message.content,
+                "dishes": [],
+                "processing_mode": "llm_chat"
             }
+            
+        except Exception as e:
+            print(f"处理LLM响应失败: {e}")
+            raise
+    
+    def _generate_llm_response(self, dishes: List, user_query: str, context_data: Dict, llm_content: str) -> Dict[str, Any]:
+        """生成LLM处理的响应"""
+        if not dishes:
+            return {
+                "type": "recommendation",
+                "content": f"{llm_content}\n根据您的需求'{user_query}'，没有找到符合条件的菜品。",
+                "dishes": [],
+                "processing_mode": "llm_enhanced",
+                "context_data": context_data
+            }
+        
+        # 如果LLM内容为空，生成默认的推荐文本
+        if not llm_content or llm_content.strip() == "":
+            llm_content = self._generate_default_recommendation_text(dishes, user_query, context_data)
+        
+        return {
+            "type": "recommendation",
+            "content": llm_content,
+            "dishes": dishes,
+            "reasons": self._generate_llm_reasons(dishes, context_data),
+            "processing_mode": "llm_enhanced",
+            "context_data": context_data
+        }
+    
+    def _generate_default_recommendation_text(self, dishes: List, user_query: str, context_data: Dict) -> str:
+        """生成默认的推荐文本"""
+        if len(dishes) == 1:
+            dish = dishes[0]
+            return f"根据您的需求'{user_query}'，为您推荐：{dish.get('name', '未知菜品')}（{dish.get('canteen', '未知食堂')}）- ¥{dish.get('price', 0)}"
+        else:
+            dish_names = [dish.get('name', '未知菜品') for dish in dishes]
+            return f"根据您的需求'{user_query}'，为您推荐以下{len(dishes)}个菜品：{', '.join(dish_names)}"
+    
+    def _generate_llm_reasons(self, dishes: List, context_data: Dict) -> List[str]:
+        """生成LLM处理的推荐理由"""
+        reasons = []
+        weather_info = context_data["weather_info"]
+        date_info = context_data["date_info"]
+        
+        for dish in dishes:
+            reason_parts = []
+            
+            # 基于情景数据的理由
+            temperature = weather_info['temperature']
+            if temperature < 15 and dish.get('taste') == '辣':
+                reason_parts.append("适合寒冷天气暖身")
+            elif temperature > 25 and dish.get('taste') == '淡':
+                reason_parts.append("适合炎热天气清爽")
+            
+            # 基于季节的理由
+            season = date_info['current_season']
+            if season == '冬季' and dish.get('taste') == '辣':
+                reason_parts.append("冬季御寒佳品")
+            elif season == '夏季' and dish.get('taste') == '淡':
+                reason_parts.append("夏季清爽选择")
+            
+            # 基于评分的理由
+            if dish.get('rating', 0) >= 4.5:
+                reason_parts.append("高评分热门菜品")
+            
+            reasons.append("，".join(reason_parts) if reason_parts else "符合推荐条件")
+        
+        return reasons
+    
+    def _create_fallback_response(self, user_query: str, initial_params: Dict, context_data: Dict) -> Dict[str, Any]:
+        """创建降级响应"""
+        return {
+            "type": "error",
+            "content": "LLM处理失败，请稍后重试",
+            "dishes": [],
+            "processing_mode": "llm_fallback"
+        }
 
 
 # 创建全局实例

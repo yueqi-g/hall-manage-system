@@ -12,10 +12,10 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-new-canteen-system-secret-key-2025"
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-new-canteen-system-secret-key-2025')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1']
 
@@ -84,18 +84,18 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database
 DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'canteen', #更改为本地数据库名称
-            'USER': 'root', #更改为用户名
-            'PASSWORD': 'test', #更改为本地数据库密码
-            'HOST': 'localhost',
-            'PORT': '3306',
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-            }
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME', 'canteen_management'),
+        'USER': os.getenv('DB_USER', 'root'),
+        'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '3306'),
+        'OPTIONS': {
+            'charset': 'utf8mb4',
         }
     }
+}
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

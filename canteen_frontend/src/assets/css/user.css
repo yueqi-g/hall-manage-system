@@ -329,7 +329,7 @@ body {
 }
 
 .chat-messages {
-    height: 200px;
+    height: 400px;
     overflow-y: auto;
     padding: 20px;
     background: #fafafa;
@@ -759,7 +759,7 @@ body {
     }
     
     .chat-messages {
-        height: 150px;
+        height: 300px;
         padding: 15px;
     }
     
