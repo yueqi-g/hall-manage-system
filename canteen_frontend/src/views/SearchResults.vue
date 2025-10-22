@@ -767,7 +767,7 @@ export default {
 <style scoped>
 /* 搜索头部样式 */
 .search-header {
-  background: linear-gradient(135deg,rgb(251, 176, 204) 50%, #f5576c 100%);
+  background: linear-gradient(135deg,rgb(242, 188, 205) 50%,rgb(232, 204, 232) 100%);
   color: white;
   padding: 30px 0;
 }
