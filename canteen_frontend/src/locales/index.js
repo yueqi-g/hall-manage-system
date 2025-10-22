@@ -48,8 +48,8 @@ export const messages = {
         description: '按品类、口味、价格等多维度筛选菜品'
       },
       {
-        title: '商家管理',
-        description: '商家可便捷管理菜品信息和更新客流数据'
+        title: '用户收藏',
+        description: '管理您收藏的菜品，快速找到心仪美食'
       }
     ],
     
@@ -104,6 +104,7 @@ export const messages = {
     mediumSpicy: '中辣',
     hotSpicy: '重辣',
     extraSpicy: '特辣',
+    extremeSpicy: '变态辣',
     maxSpiceLevel: '最大辣度',
     canteen: '食堂',
     allCanteens: '所有食堂',
@@ -120,6 +121,8 @@ export const messages = {
     applyFilters: '应用筛选',
     reset: '重置',
     savePreferences: '保存偏好',
+    preciseSearch: '精确搜索',
+    loadPreferences: '读取偏好',
     aiFoodAssistant: 'AI美食助手',
     aiAssistantIntro: '您好！我是您的AI美食助手',
     aiAssistantDescription: '告诉我您的口味偏好和预算，我可以为您推荐合适的美食！',
@@ -185,8 +188,8 @@ export const messages = {
         description: '按品類、口味、價格等多維度篩選菜品'
       },
       {
-        title: '商家管理',
-        description: '商家可便捷管理菜品資訊和更新客流數據'
+        title: '用戶收藏',
+        description: '管理您收藏的菜品，快速找到心儀美食'
       }
     ],
     
@@ -241,6 +244,7 @@ export const messages = {
     mediumSpicy: '中辣',
     hotSpicy: '重辣',
     extraSpicy: '特辣',
+    extremeSpicy: '變態辣',
     maxSpiceLevel: '最大辣度',
     canteen: '食堂',
     allCanteens: '所有食堂',
@@ -257,6 +261,8 @@ export const messages = {
     applyFilters: '應用篩選',
     reset: '重置',
     savePreferences: '保存偏好',
+    preciseSearch: '精確搜索',
+    loadPreferences: '讀取偏好',
     aiFoodAssistant: 'AI美食助手',
     aiAssistantIntro: '您好！我是您的AI美食助手',
     aiAssistantDescription: '告訴我您的口味偏好和預算，我可以為您推薦合適的美食！',
@@ -322,8 +328,8 @@ export const messages = {
         description: 'Filter dishes by category, taste, price, and other dimensions'
       },
       {
-        title: 'Merchant Management',
-        description: 'Merchants can easily manage dish information and update crowd data'
+        title: 'User Favorites',
+        description: 'Manage your favorite dishes and quickly find your preferred food'
       }
     ],
     
@@ -378,6 +384,7 @@ export const messages = {
     mediumSpicy: 'Medium Spicy',
     hotSpicy: 'Hot Spicy',
     extraSpicy: 'Extra Spicy',
+    extremeSpicy: 'Extreme Spicy',
     maxSpiceLevel: 'Max Spice Level',
     canteen: 'Canteen',
     allCanteens: 'All Canteens',
@@ -394,6 +401,8 @@ export const messages = {
     applyFilters: 'Apply Filters',
     reset: 'Reset',
     savePreferences: 'Save Preferences',
+    preciseSearch: 'Precise Search',
+    loadPreferences: 'Load Preferences',
     aiFoodAssistant: 'AI Food Assistant',
     aiAssistantIntro: 'Hello! I am your AI food assistant',
     aiAssistantDescription: 'Tell me your taste preferences and budget, I can recommend suitable food for you!',

@@ -43,12 +43,17 @@
             </div>
           </div>
           <div class="filter-panel">
-            <h3>{{ $t('preciseFiltering') }}</h3>
+            <div class="filter-header">
+              <h3>{{ $t('preciseFiltering') }}</h3>
+              <button class="btn-filter-reset-small" @click="resetFilters">
+                <i class="fas fa-undo"></i> {{ $t('reset') }}
+              </button>
+            </div>
             
-            <!-- 品类筛选 -->
-            <div class="filter-group">
-              <label for="category">{{ $t('category') }}</label>
-              <select id="category" class="filter-select" v-model="filters.category">
+            <!-- 品类筛选 - 标签和下拉框在同一行 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('category') }}</span>
+              <select id="category" class="filter-select-inline" v-model="filters.category">
                 <option value="">{{ $t('allCategories') }}</option>
                 <option value="饭">{{ $t('rice') }}</option>
                 <option value="面">{{ $t('noodles') }}</option>
@@ -57,10 +62,10 @@
               </select>
             </div>
             
-            <!-- 口味筛选 -->
-            <div class="filter-group">
-              <span>{{ $t('tastePreference') }}</span>
-              <div class="flavor-tags">
+            <!-- 口味偏好 - 标签和按钮在同一行 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('tastePreference') }}</span>
+              <div class="flavor-tags-inline">
                 <span 
                   v-for="flavor in flavorOptions" 
                   :key="flavor.value"
@@ -73,10 +78,11 @@
               </div>
             </div>
             
-            <!-- 价格范围 -->
-            <div class="filter-group">
-              <span>{{ $t('priceRange') }}</span>
-              <div class="range-inputs">
+            <!-- 价格范围 - 标签和输入框在同一行 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('priceRange') }}</span>
+              <div class="price-range-inline">
+                <span class="price-symbol">¥</span>
                 <input 
                   type="number" 
                   id="price-min" 
@@ -84,8 +90,10 @@
                   min="0" 
                   max="100"
                   v-model.number="filters.priceMin"
+                  class="price-input-inline"
                 >
                 <span class="range-separator">-</span>
+                <span class="price-symbol">¥</span>
                 <input 
                   type="number" 
                   id="price-max" 
@@ -93,71 +101,34 @@
                   min="0" 
                   max="100"
                   v-model.number="filters.priceMax"
+                  class="price-input-inline"
                 >
               </div>
-              <div class="price-slider">
-                <input 
-                  type="range" 
-                  id="price-range-min" 
-                  min="0" 
-                  max="50" 
-                  v-model.number="filters.priceMin"
-                >
-                <input 
-                  type="range" 
-                  id="price-range-max" 
-                  min="0" 
-                  max="50" 
-                  v-model.number="filters.priceMax"
-                >
-              </div>
-              <div class="price-display">¥{{ filters.priceMin }} - ¥{{ filters.priceMax }}</div>
             </div>
             
-            <!-- 人流量 -->
-            <div class="filter-group">
-              <span>{{ $t('crowdFlow') }}</span>
-              <div class="crowd-level">
-                <div class="crowd-option" v-for="option in crowdOptions" :key="option.value">
+            <!-- 辣度等级 - 使用新的格式 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('maxSpiceLevel') }}</span>
+              <div class="spice-level-display">
+                <span class="spice-level-value">{{ filters.spiceLevel }}</span>
+                <span class="spice-level-text">({{ getSpiceLevelText(filters.spiceLevel) }})</span>
+                <div class="spice-slider-container">
                   <input 
-                    type="radio" 
-                    :id="'crowd-' + option.value" 
-                    name="crowd" 
-                    :value="option.value"
-                    v-model="filters.crowd"
+                    type="range" 
+                    v-model="filters.spiceLevel"
+                    min="0" 
+                    max="5" 
+                    step="1"
+                    class="spice-slider"
                   >
-                  <label :for="'crowd-' + option.value">{{ $t(option.value) }}</label>
                 </div>
               </div>
             </div>
             
-            <!-- 辣度筛选 -->
-            <div class="filter-group">
-              <span>{{ $t('spiceLevel') }}</span>
-              <div class="spice-level-filter">
-                <input 
-                  type="range" 
-                  v-model="filters.spiceLevel"
-                  min="0" 
-                  max="5" 
-                  step="1"
-                  class="spice-slider"
-                >
-                <div class="spice-labels">
-                  <span>{{ $t('notSpicy') }}</span>
-                  <span>{{ $t('mildSpicy') }}</span>
-                  <span>{{ $t('mediumSpicy') }}</span>
-                  <span>{{ $t('hotSpicy') }}</span>
-                  <span>{{ $t('extraSpicy') }}</span>
-                </div>
-                <div class="spice-value">{{ $t('maxSpiceLevel') }}: {{ filters.spiceLevel }}</div>
-              </div>
-            </div>
-            
-            <!-- 食堂筛选 -->
-            <div class="filter-group">
-              <label for="hall">{{ $t('canteen') }}</label>
-              <select id="hall" class="filter-select" v-model="filters.hall">
+            <!-- 所属食堂 - 标签和下拉框在同一行 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('canteen') }}</span>
+              <select id="hall" class="filter-select-inline" v-model="filters.hall">
                 <option value="">{{ $t('allCanteens') }}</option>
                 <option value="一食堂">一食堂</option>
                 <option value="二食堂">二食堂</option>
@@ -166,28 +137,16 @@
               </select>
             </div>
             
-            <!-- 排序方式 -->
-            <div class="filter-group">
-              <label for="sortBy">{{ $t('sortBy') }}</label>
-              <select id="sortBy" class="filter-select" v-model="filters.sortBy">
-                <option value="created_at">{{ $t('newest') }}</option>
-                <option value="price">{{ $t('priceLowToHigh') }}</option>
-                <option value="-price">{{ $t('priceHighToLow') }}</option>
-                <option value="name">{{ $t('nameSort') }}</option>
-                <option value="popular">{{ $t('popular') }}</option>
-              </select>
-            </div>
-            
-            <!-- 操作按钮 -->
-            <div class="filter-actions">
-              <button class="btn-filter-apply" @click="applyFilters">
-                <i class="fas fa-search"></i> {{ $t('applyFilters') }}
+            <!-- 底部按钮区域 -->
+            <div class="filter-bottom-actions">
+              <button class="btn-precise-search" @click="applyFilters">
+                <i class="fas fa-search"></i> {{ $t('preciseSearch') }}
               </button>
-              <button class="btn-filter-reset" @click="resetFilters">
-                <i class="fas fa-undo"></i> {{ $t('reset') }}
-              </button>
-              <button class="btn-filter-save" @click="savePreferences">
+              <button class="btn-save-preference" @click="savePreferences">
                 <i class="fas fa-heart"></i> {{ $t('savePreferences') }}
+              </button>
+              <button class="btn-load-preference" @click="loadPreferences">
+                <i class="fas fa-download"></i> {{ $t('loadPreferences') }}
               </button>
             </div>
           </div>
@@ -197,9 +156,13 @@
       <!-- 功能区域 -->
       <section class="features" id="features">
         <div class="container">
-          <h2 class="section-title">{{ $t('coreFeatures') }}</h2>
           <div class="features-grid">
-            <div class="feature-card" v-for="feature in features" :key="feature.id">
+            <div 
+              class="feature-card" 
+              v-for="feature in features" 
+              :key="feature.id"
+              @click="handleFeatureClick(feature.id)"
+            >
               <div class="feature-icon">
                 <i :class="feature.icon"></i>
               </div>
@@ -361,7 +324,7 @@ export default {
         priceMin: 0,
         priceMax: 100,
         crowd: 'any',
-        spiceLevel: '',  // 默认不限制辣度，让用户可以看到所有菜品
+        spiceLevel: 0,  // 默认辣度等级为0（不辣）
         hall: '',
         sortBy: 'created_at'
       },
@@ -398,9 +361,9 @@ export default {
         },
         {
           id: 4,
-          icon: 'fas fa-store',
-          title: '商家管理',
-          description: '商家可便捷管理菜品信息和更新客流数据'
+          icon: 'fas fa-heart',
+          title: '用户收藏',
+          description: '管理您收藏的菜品，快速找到心仪美食'
         }
       ],
       aiInput: '',
@@ -585,111 +548,6 @@ export default {
       }
     },
 
-    /*
-    // 菜品搜索
-    async handleSearch() {
-      if (!this.searchQuery.trim()) return
-      
-      this.showSuggestions = false
-      console.log('开始菜品搜索:', this.searchQuery)
-      
-      try {
-        const response = await dishesAPI.search({
-          q: this.searchQuery,
-          page: 1,
-          limit: 10
-        })
-        
-        console.log('菜品搜索结果:', response)
-        
-        if (response.success) {
-          // 这里可以处理搜索结果，比如显示搜索结果页面
-          alert(`搜索到 ${response.data.dishes.length} 个相关菜品`)
-        } else {
-          alert('搜索失败: ' + (response.message || '未知错误'))
-        }
-      } catch (error) {
-        console.error('菜品搜索失败:', error)
-        alert('搜索失败，请检查网络连接')
-      }
-    },
-    
-    toggleFlavor(flavor) {
-      const index = this.filters.flavors.indexOf(flavor)
-      if (index > -1) {
-        this.filters.flavors.splice(index, 1)
-      } else {
-        this.filters.flavors.push(flavor)
-      }
-    },
-    
-    // 菜品筛选
-    async applyFilters() {
-      console.log('应用筛选条件:', this.filters)
-      
-      try {
-        const params = {
-          category: this.filters.category,
-          tastes: this.filters.flavors.join(','),
-          price_min: this.filters.priceMin,
-          price_max: this.filters.priceMax,
-          crowd_level: this.filters.crowd,
-          spice_level: this.filters.spiceLevel,
-          hall: this.filters.hall,
-          ordering: this.filters.sortBy
-        }
-        
-        // 移除空值参数
-        Object.keys(params).forEach(key => {
-          if (params[key] === '' || params[key] === null || params[key] === undefined) {
-            delete params[key]
-          }
-        })
-        
-        console.log('发送筛选请求参数:', params)
-        
-        const response = await dishesAPI.filter(params)
-        
-        console.log('菜品筛选结果:', response)
-        
-        // 后端返回格式: {success: true, data: {dishes: [...], filters: {...}}}
-        if (response && response.success && response.data) {
-          const dishes = Array.isArray(response.data.dishes) ? response.data.dishes : []
-          const count = dishes.length
-          
-          console.log('解析后的菜品数据:', dishes)
-          
-          // 显示筛选结果
-          this.showFilterResults(dishes, count)
-        } else {
-          alert('筛选失败: ' + (response?.message || '未知错误'))
-        }
-      } catch (error) {
-        console.error('菜品筛选失败:', error)
-        alert('筛选失败，请检查网络连接')
-      }
-    },
-    
-    // 显示筛选结果
-    showFilterResults(dishes, count) {
-      console.log('显示筛选结果，菜品数量:', count, dishes)
-      
-      // 如果没有找到菜品
-      if (count === 0 || dishes.length === 0) {
-        alert('未找到符合条件的菜品，请尝试调整筛选条件')
-        return
-      }
-      
-      // 这里可以创建一个模态框或结果页面来显示筛选结果
-      const resultMessage = `找到 ${count} 个符合条件的菜品：\n\n` + 
-        dishes.slice(0, 5).map(dish => 
-          `• ${dish.name} - ¥${dish.price} (${dish.merchant_name || '未知商家'})`
-        ).join('\n') + 
-        (dishes.length > 5 ? `\n... 还有 ${dishes.length - 5} 个菜品` : '')
-      
-      alert(resultMessage)
-    },
-    */
 
     
     // 保存用户偏好
@@ -701,13 +559,35 @@ export default {
       }
       
       try {
+        // 构建完整的偏好数据结构
         const preferences = {
+          // 品类偏好
           preferred_categories: this.filters.category ? [this.filters.category] : [],
+          
+          // 口味偏好
           preferred_tastes: this.filters.flavors,
+          
+          // 价格范围
           price_range_min: this.filters.priceMin,
           price_range_max: this.filters.priceMax,
+          
+          // 辣度等级
+          spice_level: this.filters.spiceLevel,
+          
+          // 食堂偏好
+          preferred_halls: this.filters.hall ? [this.filters.hall] : [],
+          
+          // 排序偏好
+          sort_preference: this.filters.sortBy,
+          
+          // 人流量偏好
+          crowd_preference: this.filters.crowd,
+          
+          // 饮食限制（暂时为空）
           dietary_restrictions: []
         }
+        
+        console.log('保存偏好数据:', preferences)
         
         const response = await userAPI.updatePreferences(preferences)
         
@@ -729,7 +609,7 @@ export default {
         priceMin: 0,
         priceMax: 100,
         crowd: 'any',
-        spiceLevel: '',  // 改为空字符串，表示不限制辣度
+        spiceLevel: 0,  // 重置时也回到0（不辣）
         hall: '',
         sortBy: 'created_at'
       }
@@ -1062,12 +942,149 @@ export default {
         '早餐': 'fas fa-egg'
       }
       return icons[category] || 'fas fa-utensils'
+    },
+
+    // 处理功能卡片点击
+    handleFeatureClick(featureId) {
+      switch (featureId) {
+        case 4: // 我的收藏
+          this.navigateToFavorites()
+          break
+        case 1: // 智能菜品推荐
+          this.scrollToAIAssistant()
+          break
+        case 3: // 精准筛选
+          this.scrollToFilterPanel()
+          break
+        // 其他功能可以添加对应的处理逻辑
+        default:
+          console.log(`功能 ${featureId} 被点击`)
+      }
+    },
+
+    // 导航到收藏页面
+    navigateToFavorites() {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'))
+      if (!currentUser) {
+        this.showLoginModal = true
+        return
+      }
+      this.$router.push('/favorites')
+    },
+
+    // 滚动到筛选面板
+    scrollToFilterPanel() {
+      const filterPanel = document.querySelector('.filter-panel')
+      if (filterPanel) {
+        filterPanel.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }
+    },
+
+    // 获取辣度文本描述
+    getSpiceLevelText(level) {
+      const spiceLevels = {
+        0: this.$t('notSpicy'),
+        1: this.$t('mildSpicy'),
+        2: this.$t('mediumSpicy'),
+        3: this.$t('hotSpicy'),
+        4: this.$t('extraSpicy'),
+        5: this.$t('extremeSpicy')
+      }
+      return spiceLevels[level] || this.$t('any')
+    },
+
+    // 更新价格范围拉选条的CSS变量
+    updateRangeSlider() {
+      this.$nextTick(() => {
+        const rangeSlider = document.querySelector('.range-slider')
+        if (rangeSlider) {
+          rangeSlider.style.setProperty('--min-value', this.filters.priceMin)
+          rangeSlider.style.setProperty('--max-value', this.filters.priceMax)
+        }
+      })
+    },
+
+    // 更新辣度等级拖动条的进度
+    updateSpiceSlider() {
+      this.$nextTick(() => {
+        const spiceSlider = document.querySelector('.spice-slider')
+        if (spiceSlider) {
+          const value = this.filters.spiceLevel || 0
+          const max = 5
+          const progress = (value / max) * 100
+          spiceSlider.style.setProperty('--slider-progress', `${progress}%`)
+        }
+      })
+    },
+
+    // 读取用户偏好
+    async loadPreferences() {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'))
+      if (!currentUser) {
+        this.showLoginModal = true
+        return
+      }
+      
+      try {
+        const response = await userAPI.getPreferences()
+        
+        if (response.success && response.data) {
+          const preferences = response.data
+          
+          // 更新筛选条件
+          this.filters.category = preferences.preferred_categories?.[0] || ''
+          this.filters.flavors = preferences.preferred_tastes || []
+          this.filters.priceMin = preferences.price_range_min || 0
+          this.filters.priceMax = preferences.price_range_max || 100
+          this.filters.spiceLevel = preferences.spice_level || 0
+          this.filters.hall = preferences.preferred_halls?.[0] || ''
+          this.filters.sortBy = preferences.sort_preference || 'created_at'
+          this.filters.crowd = preferences.crowd_preference || 'any'
+          
+          // 更新UI组件
+          this.updateSpiceSlider()
+          
+          alert('偏好设置已加载！')
+        } else {
+          alert('加载偏好失败: ' + (response.message || '没有找到保存的偏好设置'))
+        }
+      } catch (error) {
+        console.error('加载偏好失败:', error)
+        alert('加载偏好失败，请检查网络连接')
+      }
     }
   },
   mounted() {
     console.log('用户仪表板已加载')
     // 加载热门推荐数据
     this.loadPopularDishes()
+    
+    // 初始化价格范围拉选条
+    this.updateRangeSlider()
+    
+    // 初始化辣度等级拖动条
+    this.updateSpiceSlider()
+    
+    // 监听价格变化
+    this.$watch(
+      () => [this.filters.priceMin, this.filters.priceMax],
+      () => {
+        this.updateRangeSlider()
+      },
+      { deep: true }
+    )
+    
+    // 监听辣度等级变化
+    this.$watch(
+      () => this.filters.spiceLevel,
+      () => {
+        this.updateSpiceSlider()
+      },
+      { deep: true }
+    )
   }
 }
 </script>
@@ -1121,9 +1138,436 @@ export default {
 .filter-panel {
   background: white;
   border-radius: 12px;
-  padding: 25px;
+  padding: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   margin-top: 30px;
+}
+
+
+.features {
+  padding: 60px 0 0 0;
+  margin: 0;
+}
+
+/* 筛选面板头部 */
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.filter-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* 小重置按钮 */
+.btn-filter-reset-small {
+  padding: 6px 12px;
+  border: 1px solid #dc3545;
+  border-radius: 4px;
+  background: white;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-filter-reset-small:hover {
+  background: #dc3545;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 底部按钮区域 */
+.filter-bottom-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  align-items: center;
+}
+
+/* 精确搜索按钮 - 主题红色，与其他按钮一样大 */
+.btn-precise-search {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #e74c3c;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.btn-precise-search:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+/* 保存偏好按钮 - 文字和图标红色、边框红色、内容白色 */
+.btn-save-preference {
+  padding: 10px 16px;
+  border: 1px solid #e74c3c;
+  border-radius: 6px;
+  background: white;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-save-preference:hover {
+  background: #e74c3c;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 读取偏好按钮 - 文字和图标红色、边框红色、内容白色 */
+.btn-load-preference {
+  padding: 10px 16px;
+  border: 1px solid #e74c3c;
+  border-radius: 6px;
+  background: white;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-load-preference:hover {
+  background: #e74c3c;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* 行内布局样式 */
+.filter-row-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 6px 0;
+}
+
+.filter-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.filter-select-inline {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  transition: border-color 0.3s ease;
+  max-width: 300px;
+}
+
+.filter-select-inline:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* 口味标签行内布局 */
+.flavor-tags-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.flavor-tags-inline .flavor-tag {
+  padding: 6px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  background: white;
+  color: #495057;
+}
+
+.flavor-tags-inline .flavor-tag:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.flavor-tags-inline .flavor-tag.active {
+  background: #e74c3c;
+  border-color: #e74c3c;
+  color: white;
+}
+
+/* 价格范围行内布局 */
+.price-range-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.price-symbol {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.price-input-inline {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  max-width: 120px;
+}
+
+.price-input-inline:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+/* 辣度等级显示样式 */
+.spice-level-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.spice-level-value {
+  font-weight: bold;
+  color: #e74c3c;
+  font-size: 1rem;
+  min-width: 20px;
+  text-align: center;
+}
+
+.spice-level-text {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  min-width: 60px;
+  margin-left: -8px;
+}
+
+.spice-slider-container {
+  flex: 1;
+  margin: 0;
+  position: relative;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+}
+
+.spice-slider {
+  width: 100%;
+  margin: 0;
+  height: 6px;
+  background: linear-gradient(to right, #e74c3c 0%, #e74c3c var(--slider-progress, 0%), #e9ecef var(--slider-progress, 0%), #e9ecef 100%);
+  border-radius: 3px;
+  outline: none;
+  position: relative;
+  z-index: 1;
+}
+
+.spice-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e74c3c;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 2;
+}
+
+.spice-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e74c3c;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: none;
+  position: relative;
+  z-index: 2;
+}
+
+.spice-slider::-webkit-slider-track {
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  border-radius: 3px;
+  border: none;
+}
+
+.spice-slider::-moz-range-track {
+  width: 100%;
+  height: 6px;
+  background: transparent;
+  border-radius: 3px;
+  border: none;
+}
+
+/* 辣度筛选行内布局 */
+.spice-level-inline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.spice-slider-inline {
+  flex: 1;
+  margin: 0;
+}
+
+.spice-level-text {
+  font-weight: 600;
+  color: #e74c3c;
+  font-size: 0.9rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* 压缩布局样式 */
+.filter-row {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  align-items: flex-start;
+}
+
+.filter-group.compact {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.filter-group.compact label,
+.filter-group.compact span {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+/* 价格范围紧凑布局 */
+.price-range-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-range-compact .range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.price-range-compact .range-inputs input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.price-range-compact .price-display {
+  text-align: center;
+  font-weight: bold;
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 0;
+}
+
+/* 辣度筛选紧凑布局 */
+.spice-level-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.spice-level-compact .spice-slider {
+  width: 100%;
+  margin: 0;
+}
+
+.spice-level-compact .spice-value {
+  text-align: center;
+  font-weight: bold;
+  color: #e74c3c;
+  margin-top: 0;
+  font-size: 0.85rem;
+}
+
+/* 口味标签紧凑布局 */
+.flavor-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.flavor-tag {
+  padding: 4px 10px;
+  border: 1px solid #dee2e6;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  background: white;
+  color: #495057;
+}
+
+.flavor-tag:hover {
+  border-color: #007bff;
+  color: #007bff;
+}
+
+.flavor-tag.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
 }
 
 .filter-group {

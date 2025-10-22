@@ -48,6 +48,7 @@ class DatabaseInitializer:
                     email VARCHAR(100),
                     type ENUM('user', 'merchant', 'admin') NOT NULL DEFAULT 'user',
                     avatar VARCHAR(255),
+                    preferences JSON,
                     status ENUM('active', 'inactive', 'deleted') NOT NULL DEFAULT 'active',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

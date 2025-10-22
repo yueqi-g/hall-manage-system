@@ -19,9 +19,13 @@ def add_favorite(request):
     try:
         # 获取请求数据
         dish_id = request.data.get('dishId')
+        user_id = request.data.get('userId')
         
         if not dish_id:
             return api_validation_error("菜品ID不能为空")
+        
+        if not user_id:
+            return api_validation_error("用户ID不能为空")
         
         # 验证菜品是否存在
         from data.repositories import DishRepository
@@ -31,15 +35,8 @@ def add_favorite(request):
         if not dish:
             return api_error("DISH_001", "菜品不存在", "菜品不存在", status.HTTP_404_NOT_FOUND)
         
-        # 获取当前用户（模拟实现）
-        # 在实际项目中，这里会从token中获取用户ID
-        current_user = {
-            "id": 1,  # 模拟用户ID
-            "username": "test_user"
-        }
-        
         # 调用服务层添加收藏
-        result = dish_service.add_to_favorites(current_user['id'], dish_id)
+        result = dish_service.add_to_favorites(user_id, dish_id)
         
         if result:
             return api_success({
@@ -63,14 +60,14 @@ def get_favorites(request):
     GET /api/favorites/
     """
     try:
-        # 获取当前用户（模拟实现）
-        current_user = {
-            "id": 1,  # 模拟用户ID
-            "username": "test_user"
-        }
+        # 从查询参数中获取用户ID
+        user_id = request.GET.get('userId')
+        
+        if not user_id:
+            return api_validation_error("用户ID不能为空")
         
         # 调用服务层获取收藏列表
-        favorites = dish_service.get_user_favorites(current_user['id'])
+        favorites = dish_service.get_user_favorites(user_id)
         
         return api_success({
             "favorites": favorites,
@@ -88,14 +85,14 @@ def remove_favorite(request, favorite_id):
     DELETE /api/favorites/{id}/
     """
     try:
-        # 获取当前用户（模拟实现）
-        current_user = {
-            "id": 1,  # 模拟用户ID
-            "username": "test_user"
-        }
+        # 从查询参数中获取用户ID
+        user_id = request.GET.get('userId')
+        
+        if not user_id:
+            return api_validation_error("用户ID不能为空")
         
         # 调用服务层移除收藏
-        result = dish_service.remove_from_favorites(current_user['id'], favorite_id)
+        result = dish_service.remove_from_favorites(user_id, favorite_id)
         
         if result:
             return api_success({

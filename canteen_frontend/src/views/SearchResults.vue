@@ -149,6 +149,16 @@
                 <i class="fas fa-undo"></i> 重置
               </button>
             </div>
+            
+            <!-- 用户偏好按钮 -->
+            <div class="preference-actions">
+              <button class="btn-save-preference" @click="savePreferences">
+                <i class="fas fa-heart"></i> 保存偏好
+              </button>
+              <button class="btn-load-preference" @click="loadPreferences">
+                <i class="fas fa-download"></i> 读取偏好
+              </button>
+            </div>
           </div>
         </aside>
 
@@ -308,7 +318,7 @@
 import AppHeader from '@/components/Header.vue'
 import AppFooter from '@/components/Footer.vue'
 import LoginModal from '@/components/LoginModal.vue'
-import { dishesAPI } from '@/services/api'
+import { dishesAPI, userAPI } from '@/services/api'
 
 export default {
   name: 'SearchResults',
@@ -659,6 +669,92 @@ export default {
       } catch (error) {
         console.error('收藏失败:', error)
         alert('收藏失败，请检查网络连接')
+      }
+    },
+    
+    // 保存用户偏好
+    async savePreferences() {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'))
+      if (!currentUser) {
+        this.showLoginModal = true
+        return
+      }
+      
+      try {
+        // 构建完整的偏好数据结构
+        const preferences = {
+          // 品类偏好
+          preferred_categories: this.filters.category ? [this.filters.category] : [],
+          
+          // 口味偏好
+          preferred_tastes: this.filters.flavors,
+          
+          // 价格范围
+          price_range_min: this.filters.priceMin,
+          price_range_max: this.filters.priceMax,
+          
+          // 辣度等级
+          spice_level: this.filters.spiceLevel,
+          
+          // 食堂偏好
+          preferred_halls: this.filters.hall ? [this.filters.hall] : [],
+          
+          // 排序偏好
+          sort_preference: this.sortBy,
+          
+          // 人流量偏好
+          crowd_preference: this.filters.crowd,
+          
+          // 饮食限制（暂时为空）
+          dietary_restrictions: []
+        }
+        
+        console.log('SearchResults - 保存偏好数据:', preferences)
+        
+        const response = await userAPI.updatePreferences(preferences)
+        
+        if (response.success) {
+          alert('偏好设置已保存！')
+        } else {
+          alert('保存偏好失败: ' + (response.message || '未知错误'))
+        }
+      } catch (error) {
+        console.error('保存偏好失败:', error)
+        alert('保存偏好失败，请检查网络连接')
+      }
+    },
+    
+    // 读取用户偏好
+    async loadPreferences() {
+      const currentUser = JSON.parse(localStorage.getItem('currentUser'))
+      if (!currentUser) {
+        this.showLoginModal = true
+        return
+      }
+      
+      try {
+        const response = await userAPI.getPreferences()
+        
+        if (response.success && response.data) {
+          const preferences = response.data
+          
+          // 更新筛选条件
+          this.filters.category = preferences.preferred_categories?.[0] || ''
+          this.filters.flavors = preferences.preferred_tastes || []
+          this.filters.priceMin = preferences.price_range_min || 0
+          this.filters.priceMax = preferences.price_range_max || 100
+          this.filters.spiceLevel = preferences.spice_level || ''
+          this.filters.hall = preferences.preferred_halls?.[0] || ''
+          this.sortBy = preferences.sort_preference || 'default'
+          this.filters.crowd = preferences.crowd_preference || 'any'
+          
+          alert('偏好设置已加载！')
+        } else {
+          alert('加载偏好失败: ' + (response.message || '没有找到保存的偏好设置'))
+        }
+      } catch (error) {
+        console.error('加载偏好失败:', error)
+        alert('加载偏好失败，请检查网络连接')
       }
     }
   },
@@ -1242,6 +1338,40 @@ export default {
 .no-results p {
   margin: 0 0 2rem 0;
   font-size: 1rem;
+}
+
+/* 用户偏好按钮样式 */
+.preference-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 15px;
+}
+
+.btn-save-preference,
+.btn-load-preference {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid #e74c3c;
+  border-radius: 6px;
+  background: white;
+  color: #e74c3c;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-save-preference:hover,
+.btn-load-preference:hover {
+  background: #e74c3c;
+  color: white;
+  transform: translateY(-1px);
 }
 
 /* 响应式设计 */

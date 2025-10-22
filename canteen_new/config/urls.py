@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/dishes/', include('api.dishes_urls')),
     path('api/merchants/', include('api.merchant_urls')),
     path('api/favorites/', include('api.favorites_urls')),
+    path('api/user/', include('api.user_urls')),
 ]

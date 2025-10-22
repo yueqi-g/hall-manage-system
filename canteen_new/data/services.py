@@ -442,17 +442,21 @@ class DishService:
     def remove_from_favorites(self, user_id: int, favorite_id: int) -> bool:
         """
         从收藏中移除菜品
-        
+
         Args:
             user_id: 用户ID
             favorite_id: 收藏ID
-            
+
         Returns:
             是否成功移除
         """
-        # 这里简化处理，实际项目中应该验证用户权限
-        # 暂时返回True表示成功
-        return True
+        from .repositories import OrderRepository
+        order_repo = OrderRepository()
+        
+        # 移除收藏
+        result = order_repo.remove_favorite(user_id, favorite_id)
+        
+        return result
 
 
 class OrderService:
@@ -631,8 +635,53 @@ class MerchantService:
             raise BusinessException("客流量上报失败")
 
 
+class UserService:
+    """用户服务"""
+    
+    def __init__(self):
+        self.user_repo = UserRepository()
+    
+    def get_user_profile(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        获取用户信息
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            用户信息
+        """
+        return self.user_repo.get_user_by_id(user_id)
+    
+    def get_user_preferences(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """
+        获取用户偏好设置
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            用户偏好设置
+        """
+        return self.user_repo.get_user_preferences(user_id)
+    
+    def update_user_preferences(self, user_id: int, preferences: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        更新用户偏好设置
+        
+        Args:
+            user_id: 用户ID
+            preferences: 偏好设置
+            
+        Returns:
+            更新后的偏好设置
+        """
+        return self.user_repo.update_user_preferences(user_id, preferences)
+
+
 # 创建服务实例
 auth_service = AuthService()
 dish_service = DishService()
 order_service = OrderService()
 merchant_service = MerchantService()
+user_service = UserService()

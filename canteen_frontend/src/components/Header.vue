@@ -254,9 +254,9 @@ export default {
       this.userOrders = []
     },
     
-    // 显示收藏页面
-    async showFavorites() {
-      console.log('=== 获取收藏数据调试信息 ===')
+    // 跳转到收藏页面
+    showFavorites() {
+      console.log('=== 跳转到收藏页面 ===')
       console.log('当前登录状态:', this.isLoggedIn)
       console.log('当前用户:', this.currentUser)
       
@@ -266,34 +266,8 @@ export default {
         return
       }
       
-      try {
-        console.log('开始获取收藏数据...')
-        const response = await userAPI.getFavorites()
-        console.log('收藏API响应:', response)
-        
-        if (response.success) {
-          this.userFavorites = response.data.favorites
-          console.log('收藏数据:', this.userFavorites)
-          
-          if (this.userFavorites.length > 0) {
-            // 创建详细的收藏列表显示
-            const favoriteList = this.userFavorites.map(fav => 
-              `- ${fav.dishName} (${fav.canteen}) - ¥${fav.price}`
-            ).join('\n')
-            
-            alert(`您收藏的菜品:\n\n${favoriteList}`)
-          } else {
-            alert(this.$t('noFavorites'))
-          }
-        } else {
-          console.log('获取收藏失败:', response.message)
-          alert(this.$t('loadFavoritesFailed') + ': ' + (response.message || '未知错误'))
-        }
-      } catch (error) {
-        console.error('获取收藏数据异常:', error)
-        alert(this.$t('loadDataFailed'))
-      }
-      
+      // 直接跳转到收藏页面，收藏页面会在加载时自动发送请求
+      this.$router.push('/favorites')
       this.showUserDropdown = false
     },
     

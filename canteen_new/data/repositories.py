@@ -55,8 +55,48 @@ class UserRepository:
     
     def update_user_preferences(self, user_id: int, preferences: Dict[str, Any]) -> Dict[str, Any]:
         """更新用户偏好设置"""
-        # 这里需要根据实际的用户偏好表结构来实现
-        # 暂时返回空字典，表示更新成功
+        # 检查用户是否存在
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return None
+        
+        # 将偏好设置转换为JSON字符串存储
+        import json
+        preferences_json = json.dumps(preferences, ensure_ascii=False)
+        
+        # 更新用户偏好
+        query = """
+            UPDATE users 
+            SET preferences = %s, updated_at = NOW()
+            WHERE id = %s
+        """
+        affected = execute_update(query, (preferences_json, user_id))
+        
+        if affected > 0:
+            return preferences
+        return None
+    
+    def get_user_preferences(self, user_id: int) -> Optional[Dict[str, Any]]:
+        """获取用户偏好设置"""
+        # 检查用户是否存在
+        user = self.get_user_by_id(user_id)
+        if not user:
+            return None
+        
+        # 获取用户偏好
+        query = """
+            SELECT preferences
+            FROM users 
+            WHERE id = %s
+        """
+        result = query_one(query, (user_id,))
+        
+        if result and result['preferences']:
+            import json
+            try:
+                return json.loads(result['preferences'])
+            except json.JSONDecodeError:
+                return {}
         return {}
 
 
@@ -650,3 +690,9 @@ class OrderRepository:
             }
             for favorite in favorites
         ]
+    
+    def remove_favorite(self, user_id: int, favorite_id: int) -> bool:
+        """移除收藏"""
+        query = "DELETE FROM favorites WHERE id = %s AND user_id = %s"
+        affected = execute_update(query, (favorite_id, user_id))
+        return affected > 0
