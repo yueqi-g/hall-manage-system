@@ -215,7 +215,7 @@
                   </div>
                   <div class="result-meta">
                     <span class="result-wait-time">
-                      <i class="fas fa-clock"></i> {{ dish.waitTime }}
+                      <i class="fas fa-clock"></i> {{ dish.wait_time || dish.waitTime }}分钟
                     </span>
                     <span class="result-canteen">
                       <i class="fas fa-store"></i> {{ dish.canteen }}
@@ -266,7 +266,7 @@
                         <i class="fas fa-star"></i> {{ dish.rating }}
                       </span>
                       <span class="simple-item-wait">
-                        <i class="fas fa-clock"></i> {{ dish.waitTime }}
+                        <i class="fas fa-clock"></i> {{ dish.wait_time || dish.waitTime }}分钟
                       </span>
                     </div>
                   </div>
