@@ -16,10 +16,11 @@ def get_dishes_by_criteria(
     sort_by: str = None,
     limit: int = 10,
     max_wait_time: int = None,
-    crowd_level: str = None
+    crowd_level: str = None,
+    canteen: str = None
 ) -> List[Dict[str, Any]]:
     """
-    根据多种条件查询菜品，支持等待时间和客流级别筛选
+    根据多种条件查询菜品，支持等待时间、客流级别和食堂筛选
     
     Args:
         name: 菜品名称关键词，支持模糊匹配
@@ -33,12 +34,13 @@ def get_dishes_by_criteria(
         limit: 返回结果数量限制，默认10，最大50
         max_wait_time: 最大等待时间（分钟），用于筛选出餐快的菜品
         crowd_level: 客流级别：低、中等、高，用于推荐等待时间合适的菜品
+        canteen: 所属食堂：一食堂、二食堂、三食堂、四食堂、其他
     
     Returns:
         符合条件的菜品列表
     """
     print(f"\n=== 工具函数调试信息 ===")
-    print(f"接收参数: name={name}, category={category}, taste={taste}, min_price={min_price}, max_price={max_price}, min_rating={min_rating}, spice_level={spice_level}, sort_by={sort_by}, limit={limit}")
+    print(f"接收参数: name={name}, category={category}, taste={taste}, min_price={min_price}, max_price={max_price}, min_rating={min_rating}, spice_level={spice_level}, sort_by={sort_by}, limit={limit}, canteen={canteen}")
     
     from data.services import dish_service
     
@@ -59,6 +61,8 @@ def get_dishes_by_criteria(
         criteria['spice_level'] = spice_level
     if sort_by:
         criteria['ordering'] = sort_by
+    if canteen:
+        criteria['hall'] = canteen  # 注意：数据库服务使用'hall'参数，不是'canteen'
     
     print(f"构建的查询条件: {criteria}")
     
@@ -70,7 +74,7 @@ def get_dishes_by_criteria(
     
     # 显示前几个菜品信息用于调试
     for i, dish in enumerate(dishes[:3]):
-        print(f"菜品 {i+1}: {dish.get('name')} - ¥{dish.get('price')} - {dish.get('taste')} - 评分: {dish.get('rating')}")
+        print(f"菜品 {i+1}: {dish.get('name')} - ¥{dish.get('price')} - {dish.get('taste')} - 食堂: {dish.get('canteen')} - 评分: {dish.get('rating')}")
     
     # 应用评分筛选
     if min_rating is not None:
@@ -140,6 +144,10 @@ GET_DISHES_SCHEMA = {
                 "crowd_level": {
                     "type": "string",
                     "description": "客流级别：低、中等、高，用于推荐等待时间合适的菜品"
+                },
+                "canteen": {
+                    "type": "string",
+                    "description": "所属食堂：一食堂、二食堂、三食堂、四食堂、其他"
                 },
                 "llm_reason": {
                     "type": "string",

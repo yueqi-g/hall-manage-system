@@ -29,6 +29,15 @@ class KeywordExtractor:
             'medium': ['中等', '适中', '正常', '一般'],
             'high': ['贵', '高档', '豪华', '奢侈', '特色']
         }
+        
+        # 食堂关键词映射
+        self.canteen_keywords = {
+            '一食堂': ['一食堂', '第一食堂', '第一餐厅', '一餐', '一号食堂', '一号餐厅'],
+            '二食堂': ['二食堂', '第二食堂', '第二餐厅', '二餐', '二号食堂', '二号餐厅'],
+            '三食堂': ['三食堂', '第三食堂', '第三餐厅', '三餐', '三号食堂', '三号餐厅'],
+            '四食堂': ['四食堂', '第四食堂', '第四餐厅', '四餐', '四号食堂', '四号餐厅'],
+            '其他': ['其他食堂', '其他餐厅', '其他']
+        }
     
     def extract(self, user_query: str) -> Dict[str, Any]:
         """
@@ -76,7 +85,13 @@ class KeywordExtractor:
             params['name'] = dish_name
             print(f"提取菜品名称: {dish_name}")
         
-        # 6. 设置默认限制
+        # 6. 提取食堂信息
+        canteen = self._extract_canteen(query_lower)
+        if canteen:
+            params['canteen'] = canteen
+            print(f"提取食堂: {canteen}")
+        
+        # 7. 设置默认限制
         if not params.get('limit'):
             params['limit'] = 5
         
@@ -159,6 +174,14 @@ class KeywordExtractor:
             if dish in query:
                 return dish
         
+        return ""
+    
+    def _extract_canteen(self, query: str) -> str:
+        """提取食堂信息"""
+        for canteen, keywords in self.canteen_keywords.items():
+            for keyword in keywords:
+                if keyword in query:
+                    return canteen
         return ""
     
     def get_extraction_summary(self, user_query: str) -> Dict[str, Any]:
