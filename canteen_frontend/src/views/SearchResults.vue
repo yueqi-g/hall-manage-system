@@ -246,7 +246,7 @@
                       <i class="fas fa-clock"></i> {{ dish.wait_time || dish.waitTime }}分钟
                     </span>
                     <span class="result-canteen">
-                      <i class="fas fa-store"></i> {{ dish.canteen }}
+                      <i class="fas fa-store"></i> {{ dish.canteen }}<span v-if="dish.store_name"> - {{ dish.store_name }}</span>
                     </span>
                   </div>
                   
@@ -319,7 +319,7 @@
                     </span>
                   </div>
                   <div class="simple-item-canteen">
-                    <i class="fas fa-store"></i> {{ dish.canteen }}
+                    <i class="fas fa-store"></i> {{ dish.canteen }}<span v-if="dish.store_name"> - {{ dish.store_name }}</span>
                   </div>
                 </div>
               </div>
@@ -351,7 +351,7 @@
 import AppHeader from '@/components/Header.vue'
 import AppFooter from '@/components/Footer.vue'
 import LoginModal from '@/components/LoginModal.vue'
-import { dishesAPI, userAPI } from '@/services/api'
+import { dishesAPI, userAPI, favoritesAPI } from '@/services/api'
 
 export default {
   name: 'SearchResults',
@@ -754,7 +754,7 @@ export default {
       }
       
       try {
-        const response = await dishesAPI.addFavorite({
+        const response = await favoritesAPI.addFavorite({
           dishId: dishId
         })
         

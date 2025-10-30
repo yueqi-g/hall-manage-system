@@ -125,6 +125,49 @@
               </div>
             </div>
             
+            <!-- 人流量筛选（食堂筛选） - 与搜索页一致，支持多语言 -->
+            <div class="filter-row-inline">
+              <span class="filter-label">{{ $t('crowdFlow') }}</span>
+              <div class="crowd-level">
+                <div class="crowd-option">
+                  <input 
+                    type="radio" 
+                    id="crowd-any" 
+                    value="any"
+                    v-model="filters.crowd"
+                  >
+                  <label for="crowd-any">{{ $t('any') }}</label>
+                </div>
+                <div class="crowd-option">
+                  <input 
+                    type="radio" 
+                    id="crowd-low" 
+                    value="low"
+                    v-model="filters.crowd"
+                  >
+                  <label for="crowd-low">{{ $t('low') }}</label>
+                </div>
+                <div class="crowd-option">
+                  <input 
+                    type="radio" 
+                    id="crowd-medium" 
+                    value="medium"
+                    v-model="filters.crowd"
+                  >
+                  <label for="crowd-medium">{{ $t('medium') }}</label>
+                </div>
+                <div class="crowd-option">
+                  <input 
+                    type="radio" 
+                    id="crowd-high" 
+                    value="high"
+                    v-model="filters.crowd"
+                  >
+                  <label for="crowd-high">{{ $t('high') }}</label>
+                </div>
+              </div>
+            </div>
+            
             <!-- 所属食堂 - 标签和下拉框在同一行 -->
             <div class="filter-row-inline">
               <span class="filter-label">{{ $t('canteen') }}</span>
@@ -1713,6 +1756,7 @@ export default {
   margin: 0;
   cursor: pointer;
   font-weight: normal;
+  color: #000;
 }
 
 .spice-level-filter {

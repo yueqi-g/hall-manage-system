@@ -210,6 +210,14 @@ export const merchantAPI = {
   addDish: (data) => api.post('/merchants/dishes/add', data),
   updateDish: (id, data) => api.put(`/merchants/dishes/${id}`, data),
   deleteDish: (id) => api.delete(`/merchants/dishes/${id}/delete`),
+  // 图片上传（表单）
+  uploadImage: (file) => {
+    const form = new FormData()
+    form.append('image', file)
+    return api.post('/merchants/upload-image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
   // 查找商家
   findMerchants: (params) => api.get('/merchants/', { params }),
   
