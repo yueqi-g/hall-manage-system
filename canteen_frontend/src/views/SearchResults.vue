@@ -234,13 +234,13 @@
                   </div>
                 </div>
                 <div class="result-content">
+                  <!-- 第一行：菜品名称和价格 -->
                   <div class="result-header">
-                    <div class="result-title">
-                      <h3 class="result-name">{{ dish.name }}</h3>
-                      <p class="result-merchant">{{ dish.merchant }}</p>
-                    </div>
+                    <h3 class="result-name">{{ dish.name }}</h3>
                     <div class="result-price">¥{{ dish.price }}</div>
                   </div>
+                  
+                  <!-- 第二行：等待时间和所属食堂 -->
                   <div class="result-meta">
                     <span class="result-wait-time">
                       <i class="fas fa-clock"></i> {{ dish.wait_time || dish.waitTime }}分钟
@@ -249,24 +249,30 @@
                       <i class="fas fa-store"></i> {{ dish.canteen }}
                     </span>
                   </div>
-                  <p class="result-description">{{ dish.description }}</p>
-                  <div class="result-tags">
-                    <span 
-                      v-for="tag in dish.tags" 
-                      :key="tag"
-                      class="result-tag"
-                      :class="{ spicy: tag === '辣' || tag === '麻辣' }"
-                    >
-                      {{ tag }}
-                    </span>
-                  </div>
-                  <div class="result-actions">
-                    <button class="btn-primary" @click.stop="orderDish(dish.id)">
-                      <i class="fas fa-utensils"></i> 立即下单
-                    </button>
-                    <button class="btn-secondary" @click.stop="addToFavorites(dish.id)">
-                      <i class="fas fa-heart"></i> 收藏
-                    </button>
+                  
+                  <!-- 第三、四行：描述和标签（左半边） + 收藏按钮（右半边） -->
+                  <div class="result-bottom-section">
+                    <div class="result-left-content">
+                      <!-- 第三行：描述 -->
+                      <p class="result-description">{{ dish.description }}</p>
+                      
+                      <!-- 第四行：标签 -->
+                      <div class="result-tags">
+                        <span 
+                          v-for="tag in getDishTags(dish)" 
+                          :key="tag"
+                          class="result-tag"
+                          :class="{ spicy: tag === '辣' || tag === '麻辣' }"
+                        >
+                          {{ tag }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="result-actions">
+                      <button class="btn-favorite-large" @click.stop="addToFavorites(dish.id)">
+                        <i class="fas fa-heart"></i> 收藏
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -300,13 +306,12 @@
                   </div>
                   <div class="simple-item-actions">
                     <button class="btn-simple-primary" @click.stop="switchToGridViewAndHighlight(dish.id)">查看详情</button>
-                    <button class="btn-simple-secondary" @click.stop="orderDish(dish.id)">立即下单</button>
                   </div>
                 </div>
                 <div class="simple-item-footer">
                   <div class="simple-item-tags">
                     <span 
-                      v-for="tag in dish.tags" 
+                      v-for="tag in getDishTags(dish)" 
                       :key="tag"
                       class="simple-tag"
                     >
@@ -848,6 +853,43 @@ export default {
         console.error('加载偏好失败:', error)
         alert('加载偏好失败，请检查网络连接')
       }
+    },
+    
+    // 获取菜品标签
+    getDishTags(dish) {
+      const tags = []
+      
+      // 从taste字段添加口味标签
+      if (dish.taste) {
+        tags.push(dish.taste)
+      }
+      
+      // 从category字段添加品类标签
+      if (dish.category) {
+        tags.push(dish.category)
+      }
+      
+      // 根据辣度等级添加辣度标签
+      if (dish.spice_level > 0) {
+        const spiceLevels = ['微辣', '中辣', '辣', '特辣', '变态辣']
+        if (dish.spice_level <= spiceLevels.length) {
+          tags.push(spiceLevels[dish.spice_level - 1])
+        } else {
+          tags.push('辣')
+        }
+      }
+      
+      // 如果评分高，添加推荐标签
+      if (dish.rating >= 4.5) {
+        tags.push('高分')
+      }
+      
+      // 如果等待时间小于2分钟，添加快速标签
+      if (dish.wait_time && dish.wait_time <= 2) {
+        tags.push('快速')
+      }
+      
+      return tags
     }
   },
   mounted() {
@@ -1139,8 +1181,8 @@ export default {
 /* 网格视图 */
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px;
   margin-bottom: 30px;
 }
 
@@ -1163,11 +1205,11 @@ export default {
 }
 
 .result-image {
-  height: 120px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: white;
   position: relative;
 }
@@ -1185,14 +1227,95 @@ export default {
 }
 
 .result-content {
-  padding: 15px;
+  padding: 12px;
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.result-name {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+}
+
+.result-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #e74c3c;
+  margin-left: 10px;
+}
+
+/* 第二行：等待时间和所属食堂 */
+.result-meta {
+  display: flex;
+  gap: 15px;
   margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.result-wait-time,
+.result-canteen {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 第三、四行：描述和标签（左半边） + 收藏按钮（右半边） */
+.result-bottom-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  min-height: 40px;
+}
+
+.result-left-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-description {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.3;
+  min-height: 20px;
+}
+
+.result-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 0;
+}
+
+.result-tag {
+  background: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.result-tag.spicy {
+  background: #ffe8e6;
+  color: #e74c3c;
+}
+
+.result-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
 }
 
 .result-name {
@@ -1251,7 +1374,8 @@ export default {
 
 .result-actions {
   display: flex;
-  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
 
 .btn-primary {
@@ -1282,6 +1406,36 @@ export default {
 
 .btn-secondary:hover {
   background: #e9ecef;
+}
+
+/* 大号收藏按钮样式 */
+.btn-favorite-large {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 100px;
+  min-height: 50px;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.btn-favorite-large:hover {
+  background: #c0392b;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(231, 76, 60, 0.4);
+}
+
+.btn-favorite-large i {
+  font-size: 1.1rem;
 }
 
 /* 列表视图 */
