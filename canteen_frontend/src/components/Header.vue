@@ -39,10 +39,6 @@
                 <i class="fas fa-heart"></i>
                 {{ $t('myFavorites') }}
               </a>
-              <a href="#" class="dropdown-item" @click.prevent="showOrders">
-                <i class="fas fa-receipt"></i>
-                {{ $t('myOrders') }}
-              </a>
               <div class="dropdown-divider"></div>
               <a href="#" class="dropdown-item" @click.prevent="logout">
                 <i class="fas fa-sign-out-alt"></i>
@@ -105,7 +101,7 @@
 </template>
 
 <script>
-import { userAPI, authAPI, ordersAPI } from '@/services/api'
+import { userAPI, authAPI } from '@/services/api'
 
 export default {
   name: 'AppHeader',
@@ -122,8 +118,7 @@ export default {
       // 新增用户状态数据
       currentUser: null,
       isLoggedIn: false,
-      userFavorites: [],
-      userOrders: []
+      userFavorites: []
     }
   },
   methods: {
@@ -215,12 +210,6 @@ export default {
           if (favoritesResponse.success) {
             this.userFavorites = favoritesResponse.data.favorites
           }
-          
-          // 加载订单数据
-          const ordersResponse = await ordersAPI.getOrders()
-          if (ordersResponse.success) {
-            this.userOrders = ordersResponse.data.orders
-          }
         } catch (error) {
           console.error('加载用户数据失败:', error)
         }
@@ -251,7 +240,6 @@ export default {
       this.currentUser = null
       this.isLoggedIn = false
       this.userFavorites = []
-      this.userOrders = []
     },
     
     // 跳转到收藏页面
@@ -268,16 +256,6 @@ export default {
       
       // 直接跳转到收藏页面，收藏页面会在加载时自动发送请求
       this.$router.push('/favorites')
-      this.showUserDropdown = false
-    },
-    
-    // 显示订单页面
-    showOrders() {
-      if (this.userOrders.length > 0) {
-        alert(`您有 ${this.userOrders.length} 个订单`)
-      } else {
-        alert(this.$t('noOrders'))
-      }
       this.showUserDropdown = false
     }
   },
