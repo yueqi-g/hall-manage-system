@@ -210,6 +210,19 @@
                 </div>
                 
                 <div class="chat-input-container">
+                  <!-- 用户偏好开关 -->
+                  <div class="preference-toggle">
+                    <label class="toggle-label">
+                      <input 
+                        type="checkbox" 
+                        v-model="applyUserPreferences"
+                        class="toggle-checkbox"
+                      >
+                      <span class="toggle-slider"></span>
+                      <span class="toggle-text">应用保存的偏好限制</span>
+                    </label>
+                  </div>
+                  
                   <div class="input-example">
                     <span>{{ $t('inputExample') }}</span>
                   </div>
@@ -369,6 +382,7 @@ export default {
         }
       ],
       aiInput: '',
+      applyUserPreferences: true, // 默认应用用户偏好
       exampleQuestions: [
         '我想吃辣的面食，价格实惠的',
         '我赶时间，在一食堂有哪些推荐的菜'
@@ -628,19 +642,16 @@ export default {
       const loadingMessage = this.addLoadingMessage()
       
       try {
-        // 获取用户偏好
+        // 获取当前用户
         const currentUser = JSON.parse(localStorage.getItem('currentUser'))
-        const preferences = currentUser?.preferences || {
-          flavors: [],
-          budget: { min: 0, max: 50 },
-          dietary: []
-        }
+        const userId = currentUser?.id
         
-        console.log('发送AI推荐请求:', this.aiInput, preferences)
+        console.log('发送AI推荐请求:', this.aiInput, '应用用户偏好:', this.applyUserPreferences, '用户ID:', userId)
         
         const response = await dishesAPI.aiRecommend({
           query: this.aiInput,
-          preferences: preferences
+          merge_user_preference: this.applyUserPreferences,
+          user_id: userId
         })
         
         console.log('AI推荐结果:', response)
@@ -2252,6 +2263,60 @@ export default {
   background: #c0392b;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
+/* 用户偏好开关样式 */
+.preference-toggle {
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-slider {
+  position: relative;
+  width: 44px;
+  height: 22px;
+  background-color: #ccc;
+  border-radius: 22px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-slider:before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+.toggle-checkbox:checked + .toggle-slider {
+  background-color: #e74c3c;
+}
+
+.toggle-checkbox:checked + .toggle-slider:before {
+  transform: translateX(22px);
+}
+
+.toggle-text {
+  font-size: 0.85rem;
+  color: #495057;
 }
 
 /* 响应式设计 */

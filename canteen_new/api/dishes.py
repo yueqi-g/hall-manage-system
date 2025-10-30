@@ -167,19 +167,21 @@ def ai_recommend(request):
     """
     try:
         query = request.data.get('query', '')
-        preferences = request.data.get('preferences', {})
+        merge_user_preference = request.data.get('merge_user_preference', False)
+        user_id = request.data.get('user_id')
         
         if not query:
             return api_validation_error("查询内容不能为空")
         
-        # 获取用户ID（如果已登录）
-        user_id = None
-        if request.user and request.user.is_authenticated:
+        # 如果前端没有传递user_id，尝试从认证用户获取
+        if not user_id and request.user and request.user.is_authenticated:
             user_id = request.user.id
+        
+        print(f"AI推荐请求 - 查询: {query}, 用户ID: {user_id}, 融合用户偏好: {merge_user_preference}")
         
         # 调用新的AI编排器
         from ai.orchestrator import ai_orchestrator
-        result = ai_orchestrator.process_query(query, user_id)
+        result = ai_orchestrator.process_query(query, user_id, merge_user_preference)
         
         # 添加API调用状态信息
         enhanced_result = {
@@ -187,7 +189,8 @@ def ai_recommend(request):
             "api_status": {
                 "processing_mode": result.get("processing_mode", "unknown"),
                 "context_aware": True,
-                "user_preferences_used": user_id is not None,
+                "user_preferences_used": user_id is not None and merge_user_preference,
+                "merge_user_preference": merge_user_preference,
                 "timestamp": "2025-10-19T11:56:00Z"  # 更新时间戳
             }
         }

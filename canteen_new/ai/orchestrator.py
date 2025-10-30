@@ -18,13 +18,14 @@ class AIOrchestrator:
         self.context_service = ContextService()
         self.llm_service = LLMService()
     
-    def process_query(self, user_query: str, user_id: Optional[int] = None) -> Dict[str, Any]:
+    def process_query(self, user_query: str, user_id: Optional[int] = None, merge_user_preference: bool = False) -> Dict[str, Any]:
         """
         处理用户查询的主流程
         
         Args:
             user_query: 用户输入文本
             user_id: 用户ID（可选）
+            merge_user_preference: 是否融合用户偏好，默认False
             
         Returns:
             推荐结果
@@ -32,6 +33,7 @@ class AIOrchestrator:
         print(f"\n=== AI流程编排器调试信息 ===")
         print(f"用户查询: {user_query}")
         print(f"用户ID: {user_id}")
+        print(f"融合用户偏好: {merge_user_preference}")
         
         try:
             # 1. 第一阶段：关键词提取（初始判断）
@@ -44,8 +46,18 @@ class AIOrchestrator:
             context_data = self.context_service.get_all_context_data(user_id)
             print(f"情景数据: {context_data}")
             
-            # 3. 第二阶段：决策使用LLM还是降级处理
-            print("3. 决策阶段...")
+            # 3. 如果启用用户偏好融合，获取用户明确设置的偏好
+            if merge_user_preference and user_id:
+                print("3. 用户偏好融合阶段...")
+                user_preferences = self._get_user_preferences(user_id)
+                print(f"用户明确设置的偏好: {user_preferences}")
+                
+                if not self._is_user_preferences_empty(user_preferences):
+                    initial_params = self._merge_user_preferences(initial_params, user_preferences)
+                    print(f"融合后的参数: {initial_params}")
+            
+            # 4. 第三阶段：决策使用LLM还是降级处理
+            print("4. 决策阶段...")
             if self.llm_service.is_available():
                 print("✅ LLM可用，使用增强处理")
                 result = self._process_with_llm(user_query, initial_params, context_data)
@@ -53,7 +65,7 @@ class AIOrchestrator:
                 print("⚠️ LLM不可用，使用降级处理")
                 result = self._process_with_keywords(user_query, initial_params, context_data)
             
-            print(f"4. 最终结果: {result.get('type')}, 菜品数量: {len(result.get('dishes', []))}")
+            print(f"5. 最终结果: {result.get('type')}, 菜品数量: {len(result.get('dishes', []))}")
             return result
             
         except Exception as e:
@@ -324,6 +336,122 @@ class AIOrchestrator:
             reasons = reasons[:3]
         
         return "，".join(reasons)
+    
+    def _get_user_preferences(self, user_id: int) -> Dict[str, Any]:
+        """
+        获取用户明确设置的偏好
+        
+        Args:
+            user_id: 用户ID
+            
+        Returns:
+            用户偏好字典
+        """
+        try:
+            from data.services import user_service
+            preferences = user_service.get_user_preferences(user_id)
+            return preferences or {}
+        except Exception as e:
+            print(f"获取用户偏好失败: {e}")
+            return {}
+    
+    def _is_user_preferences_empty(self, user_preferences: Dict[str, Any]) -> bool:
+        """
+        检查用户偏好是否全部为空
+        
+        Args:
+            user_preferences: 用户偏好字典
+            
+        Returns:
+            是否全部为空
+        """
+        if not user_preferences:
+            return True
+        
+        return (
+            not user_preferences.get('preferred_categories') and  # 空列表
+            not user_preferences.get('preferred_tastes') and      # 空列表
+            user_preferences.get('price_range_min', 0) == 0 and   # 价格为0
+            user_preferences.get('price_range_max', 100) == 100 and  # 价格为100
+            user_preferences.get('spice_level', 0) == 0 and       # 辣度为0
+            not user_preferences.get('preferred_halls') and       # 空列表
+            not user_preferences.get('sort_preference') and       # 空字符串
+            not user_preferences.get('crowd_preference') and      # 空字符串
+            not user_preferences.get('dietary_restrictions')      # 空列表
+        )
+    
+    def _merge_user_preferences(self, extracted_params: Dict, user_preferences: Dict) -> Dict[str, Any]:
+        """
+        融合用户偏好与提取的关键词
+        
+        Args:
+            extracted_params: 提取的关键词参数
+            user_preferences: 用户偏好
+            
+        Returns:
+            融合后的参数
+        """
+        merged = extracted_params.copy()
+        
+        # 品类：关键词未提取到，使用用户偏好
+        if not merged.get('category') and user_preferences.get('preferred_categories'):
+            merged['category'] = user_preferences['preferred_categories'][0]
+        
+        # 口味：关键词未提取到，使用用户偏好  
+        if not merged.get('taste') and user_preferences.get('preferred_tastes'):
+            merged['taste'] = user_preferences['preferred_tastes'][0]
+        
+        # 食堂：关键词未提取到，使用用户偏好
+        if not merged.get('canteen') and user_preferences.get('preferred_halls'):
+            merged['canteen'] = user_preferences['preferred_halls'][0]
+        
+        # 辣度：用户偏好优先，除非关键词明确设置为0（不辣）
+        if user_preferences.get('spice_level') is not None and merged.get('spice_level') != 0:
+            merged['spice_level'] = user_preferences['spice_level']
+        
+        # 价格范围：取交集
+        if user_preferences.get('price_range_min') is not None and user_preferences.get('price_range_max') is not None:
+            merged = self._merge_price_ranges(merged, [user_preferences['price_range_min'], user_preferences['price_range_max']])
+        
+        return merged
+    
+    def _merge_price_ranges(self, params: Dict, user_price_range: List[int]) -> Dict[str, Any]:
+        """
+        合并价格范围，取交集
+        
+        Args:
+            params: 原始参数
+            user_price_range: 用户偏好的价格范围 [min, max]
+            
+        Returns:
+            合并后的参数
+        """
+        merged = params.copy()
+        user_min = user_price_range[0]
+        user_max = user_price_range[1]
+        
+        # 如果参数中没有价格限制，直接使用用户偏好
+        if 'min_price' not in merged and 'max_price' not in merged:
+            merged['min_price'] = user_min
+            merged['max_price'] = user_max
+        else:
+            # 取交集
+            param_min = merged.get('min_price', 0)
+            param_max = merged.get('max_price', float('inf'))
+            
+            merged_min = max(param_min, user_min)
+            merged_max = min(param_max, user_max)
+            
+            # 确保价格范围有效
+            if merged_min <= merged_max:
+                merged['min_price'] = merged_min
+                merged['max_price'] = merged_max
+            else:
+                # 如果交集为空，使用用户偏好
+                merged['min_price'] = user_min
+                merged['max_price'] = user_max
+        
+        return merged
     
     def _create_error_response(self, error_message: str) -> Dict[str, Any]:
         """创建错误响应"""
