@@ -333,11 +333,18 @@ class DishRepository:
             # 这里可以根据等待时间排序，暂时使用rating
             order_clause = "d.rating DESC, d.id DESC"
         
-        # 获取菜品数据
+        # 获取菜品数据（包含等待时间）
         query_sql = f"""
             SELECT d.id, d.merchant_id, d.name, d.description, d.price, d.category, 
                    d.taste, d.spice_level, d.image_url, d.is_available, d.stock_quantity, d.rating,
-                   m.store_name, m.canteen
+                   m.store_name, m.canteen,
+                   COALESCE((
+                       SELECT waiting_time 
+                       FROM traffic_data 
+                       WHERE merchant_id = d.merchant_id 
+                       ORDER BY timestamp DESC 
+                       LIMIT 1
+                   ), 15) as wait_time
             FROM dishes d
             LEFT JOIN merchants m ON d.merchant_id = m.id
             WHERE {where_clause}
@@ -365,7 +372,8 @@ class DishRepository:
                 "rating": float(dish['rating']),
                 "store_name": dish['store_name'],
                 "merchant_name": dish['store_name'],  # 添加merchant_name字段
-                "canteen": dish['canteen']
+                "canteen": dish['canteen'],
+                "wait_time": int(dish['wait_time']) if dish['wait_time'] else 15  # 等待时间（分钟），默认15分钟
             }
             for dish in dishes
         ]
@@ -421,7 +429,14 @@ class DishRepository:
         query = """
             SELECT d.id, d.merchant_id, d.name, d.description, d.price, d.category, 
                    d.taste, d.spice_level, d.image_url, d.is_available, d.stock_quantity, d.rating,
-                   m.store_name, m.canteen
+                   m.store_name, m.canteen,
+                   COALESCE((
+                       SELECT waiting_time 
+                       FROM traffic_data 
+                       WHERE merchant_id = d.merchant_id 
+                       ORDER BY timestamp DESC 
+                       LIMIT 1
+                   ), 15) as wait_time
             FROM dishes d
             LEFT JOIN merchants m ON d.merchant_id = m.id
             WHERE d.id = %s AND d.status = 'active'
@@ -442,7 +457,8 @@ class DishRepository:
                 "stock_quantity": dish['stock_quantity'],
                 "rating": float(dish['rating']),
                 "store_name": dish['store_name'],
-                "canteen": dish['canteen']
+                "canteen": dish['canteen'],
+                "wait_time": int(dish['wait_time']) if dish['wait_time'] else 15
             }
         return None
     
@@ -543,7 +559,14 @@ class DishRepository:
         query = """
             SELECT d.id, d.merchant_id, d.name, d.description, d.price, d.category, 
                    d.taste, d.spice_level, d.image_url, d.is_available, d.stock_quantity, d.rating,
-                   m.store_name, m.canteen
+                   m.store_name, m.canteen,
+                   COALESCE((
+                       SELECT waiting_time 
+                       FROM traffic_data 
+                       WHERE merchant_id = d.merchant_id 
+                       ORDER BY timestamp DESC 
+                       LIMIT 1
+                   ), 15) as wait_time
             FROM dishes d
             LEFT JOIN merchants m ON d.merchant_id = m.id
             WHERE d.status = 'active'
@@ -567,7 +590,8 @@ class DishRepository:
                 "rating": float(dish['rating']),
                 "store_name": dish['store_name'],
                 "merchant_name": dish['store_name'],  # 添加merchant_name字段
-                "canteen": dish['canteen']
+                "canteen": dish['canteen'],
+                "wait_time": int(dish['wait_time']) if dish['wait_time'] else 15
             }
             for dish in dishes
         ]
