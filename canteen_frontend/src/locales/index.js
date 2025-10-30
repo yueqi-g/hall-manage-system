@@ -40,8 +40,8 @@ export const messages = {
         description: '基于AI分析您的口味偏好，为您精准推荐合适的美食'
       },
       {
-        title: '实时客流量',
-        description: '查看各食堂窗口实时客流，避开排队高峰'
+        title: '热门推荐',
+        description: '查看今日最受欢迎的菜品，发现校园美食热点'
       },
       {
         title: '精准筛选',
@@ -180,8 +180,8 @@ export const messages = {
         description: '基於AI分析您的口味偏好，為您精準推薦合適的美食'
       },
       {
-        title: '即時客流量',
-        description: '查看各食堂窗口即時客流，避開排隊高峰'
+        title: '熱門推薦',
+        description: '查看今日最受歡迎的菜品，發現校園美食熱點'
       },
       {
         title: '精準篩選',
@@ -320,8 +320,8 @@ export const messages = {
         description: 'AI analyzes your taste preferences to accurately recommend suitable food'
       },
       {
-        title: 'Real-time Crowd Flow',
-        description: 'View real-time crowd flow at canteen windows to avoid peak hours'
+        title: 'Popular Recommendations',
+        description: 'View today\'s most popular dishes and discover campus food hotspots'
       },
       {
         title: 'Precise Filtering',

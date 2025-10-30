@@ -349,9 +349,9 @@ export default {
         },
         {
           id: 2,
-          icon: 'fas fa-chart-line',
-          title: '实时客流量',
-          description: '查看各食堂窗口实时客流，避开排队高峰'
+          icon: 'fas fa-fire',
+          title: '热门推荐',
+          description: '查看今日最受欢迎的菜品，发现校园美食热点'
         },
         {
           id: 3,
@@ -953,6 +953,9 @@ export default {
         case 1: // 智能菜品推荐
           this.scrollToAIAssistant()
           break
+        case 2: // 热门推荐
+          this.scrollToPopularDishes()
+          break
         case 3: // 精准筛选
           this.scrollToFilterPanel()
           break
@@ -977,6 +980,17 @@ export default {
       const filterPanel = document.querySelector('.filter-panel')
       if (filterPanel) {
         filterPanel.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        })
+      }
+    },
+
+    // 滚动到热门菜品区域
+    scrollToPopularDishes() {
+      const popularDishesSection = document.querySelector('.popular-dishes-side')
+      if (popularDishesSection) {
+        popularDishesSection.scrollIntoView({ 
           behavior: 'smooth',
           block: 'start'
         })
