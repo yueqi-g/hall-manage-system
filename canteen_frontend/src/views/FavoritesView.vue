@@ -85,14 +85,11 @@
                     <span class="favorite-tag">
                       {{ favorite.category }}
                     </span>
-                  </div>
-                  <div class="favorite-actions">
-                    <button class="btn-primary" @click.stop="orderDish(favorite.dish_id)">
-                      <i class="fas fa-utensils"></i> 立即下单
-                    </button>
+                    <div class="favorite-actions">
                     <button class="btn-secondary" @click.stop="removeFavorite(favorite.id)">
                       <i class="fas fa-times"></i> 取消收藏
                     </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -449,6 +446,8 @@ export default {
   flex-wrap: wrap;
   gap: 5px;
   margin-bottom: 15px;
+  align-items: center;
+  width: 100%;
 }
 
 .favorite-tag {
@@ -465,8 +464,10 @@ export default {
 }
 
 .favorite-actions {
-  display: flex;
+  display: inline-flex;
   gap: 10px;
+  margin-left: auto;
+  vertical-align: middle;
 }
 
 .btn-primary {

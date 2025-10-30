@@ -2,7 +2,7 @@
 商家管理API路由配置
 """
 from django.urls import path, re_path
-from .merchant import merchant_dishes, add_dish, update_dish, delete_dish, report_traffic, merchant_list
+from .merchant import merchant_dishes, add_dish, update_dish, delete_dish, report_traffic, merchant_list, upload_image
 
 urlpatterns = [
     # 商家菜品管理
@@ -13,6 +13,8 @@ urlpatterns = [
     
     # 客流量管理
     re_path(r'^traffic/?$', report_traffic, name='report_traffic'),
+    # 图片上传
+    re_path(r'^upload-image/?$', upload_image, name='upload_image'),
     
     # 商家查询
     re_path(r'^$', merchant_list, name='merchant_list'),

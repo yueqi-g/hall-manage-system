@@ -29,7 +29,7 @@
         <!-- 菜品管理区域 -->
         <section class="merchant-section">
           <h2><i class="fas fa-utensils"></i> 菜品管理</h2>
-          <form class="dish-form" @submit.prevent="addDish" enctype="multipart/form-data">
+          <form class="dish-form" @submit.prevent="saveDish" enctype="multipart/form-data">
             <div class="form-row">
               <div class="form-group">
                 <label for="dishName">菜品名称 *</label>
@@ -161,9 +161,9 @@
             </div>
             <div class="form-actions">
               <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
-                <i class="fas fa-plus" v-if="!isSubmitting"></i>
+                <i class="fas" :class="isEditing ? 'fa-save' : 'fa-plus'" v-if="!isSubmitting"></i>
                 <i class="fas fa-spinner fa-spin" v-else></i>
-                {{ isSubmitting ? '添加中...' : '添加菜品' }}
+                {{ isSubmitting ? (isEditing ? '保存中...' : '添加中...') : (isEditing ? '保存修改' : '添加菜品') }}
               </button>
               <button type="button" class="btn btn-secondary" @click="resetForm">
                 <i class="fas fa-undo"></i> 重置
@@ -277,6 +277,8 @@ export default {
     return {
       currentUser: null,
       isSubmitting: false,
+      isEditing: false,
+      editingDishId: null,
       dishForm: {
         name: '',
         price: '',
@@ -438,10 +440,12 @@ export default {
         image_file: null
       }
       this.removeImage()
+      this.isEditing = false
+      this.editingDishId = null
     },
     
-    // 添加菜品
-    async addDish() {
+    // 保存（新增或更新）
+    async saveDish() {
       // 表单验证
       const errors = this.validateForm()
       if (errors.length > 0) {
@@ -453,7 +457,7 @@ export default {
       this.isSubmitting = true
       
       try {
-        console.log('添加菜品请求:', this.dishForm)
+        console.log(this.isEditing ? '更新菜品请求:' : '添加菜品请求:', this.dishForm)
         const merchant = JSON.parse(localStorage.getItem('currentUser') || '{}')
         const merchantId = merchant.merchantId || merchant.id
         
@@ -477,27 +481,31 @@ export default {
           is_available: true
         }
         
-        // 如果有图片，先上传图片
+        // 如果有图片文件，先上传图片
         if (this.dishForm.image_file) {
-          const imageUrl = await this.uploadImage(this.dishForm.image_file)
-          payload.image_url = imageUrl
+          const uploadResp = await merchantAPI.uploadImage(this.dishForm.image_file)
+          if (uploadResp && uploadResp.success) {
+            payload.image_url = uploadResp.data?.url
+          }
         }
         
         console.log('发送的payload:', payload)
-        const response = await merchantAPI.addDish(payload)
-        console.log('添加菜品响应:', response)
-        
-        // 检查响应格式：后端返回 {success: true, data: {...}, message: "..."}
-        if (response && response.success) {
-          alert('菜品添加成功！')
+        let response
+        if (this.isEditing && this.editingDishId) {
+          response = await merchantAPI.updateDish(this.editingDishId, { ...payload, merchant_id: merchantId })
+        } else {
+          response = await merchantAPI.addDish(payload)
+        }
+        console.log('保存菜品响应:', response)
+        const ok = response && response.success
+        alert(ok ? (this.isEditing ? '菜品更新成功！' : '菜品添加成功！') : ('保存失败: ' + (response?.message || '未知错误')))
+        if (ok) {
           this.resetForm()
           this.loadDishes()
-        } else {
-          alert('菜品添加失败: ' + ((response && response.message) || '未知错误'))
         }
       } catch (error) {
-        console.error('添加菜品异常:', error)
-        let errorMessage = '添加菜品失败'
+        console.error('保存菜品异常:', error)
+        let errorMessage = this.isEditing ? '更新菜品失败' : '添加菜品失败'
         if (error.response?.data) {
           // 提取后端返回的错误信息
           const errorData = error.response.data
@@ -517,23 +525,22 @@ export default {
       }
     },
     
-    // 上传图片
-    async uploadImage(file) {
-      // 这里可以实现图片上传到云存储或本地存储
-      // 暂时返回一个占位符URL
-      return new Promise((resolve) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          resolve(e.target.result) // 返回base64编码的图片
-        }
-        reader.readAsDataURL(file)
-      })
-    },
-    
     // 编辑菜品
     editDish(dish) {
       // 将菜品数据填充到表单进行编辑
-      this.dishForm = { ...dish }
+      this.isEditing = true
+      this.editingDishId = dish.id
+      this.dishForm = {
+        name: dish.name || '',
+        price: dish.price || '',
+        category: dish.category || '',
+        taste: dish.taste || '',
+        description: dish.description || '',
+        spice_level: dish.spice_level || 0,
+        stock_quantity: dish.stock_quantity || 0,
+        image_preview: dish.image_url || null,
+        image_file: null
+      }
     },
     
     // 删除菜品

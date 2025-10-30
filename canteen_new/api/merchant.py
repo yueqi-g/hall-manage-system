@@ -2,8 +2,13 @@
 商家管理API模块
 实现商家菜品列表、添加菜品、更新菜品、删除菜品、客流量上报等功能
 """
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+from django.conf import settings
+import os
 
 from core.response import api_success, api_error, api_validation_error
 from core.exceptions import ValidationException, BusinessException
@@ -216,6 +221,32 @@ def report_traffic(request):
         print(f"客流量上报错误: {str(e)}")
         import traceback
         traceback.print_exc()
+        return api_error("SERVER_001", str(e), "服务器内部错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def upload_image(request):
+    """
+    上传菜品图片
+    POST /api/merchants/upload-image
+    表单字段: image
+    返回: { url: '/media/dishes/xxx.jpg' }
+    """
+    try:
+        file_obj = request.FILES.get('image')
+        if not file_obj:
+            return api_validation_error("未收到图片文件(image)")
+
+        # 确保目录存在
+        save_dir = os.path.join('dishes')
+        filename = default_storage.save(os.path.join(save_dir, file_obj.name), ContentFile(file_obj.read()))
+        file_url = os.path.join(settings.MEDIA_URL.strip('/'), filename).replace('\\', '/')
+        if not file_url.startswith('/'):
+            file_url = '/' + file_url
+
+        return api_success({"url": file_url}, "图片上传成功")
+    except Exception as e:
         return api_error("SERVER_001", str(e), "服务器内部错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
