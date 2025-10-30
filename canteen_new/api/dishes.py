@@ -136,6 +136,29 @@ def popular_dishes(request):
         return api_error("SERVER_001", str(e), "获取热门菜品错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['GET'])
+def random_dishes(request):
+    """
+    随机菜品推荐
+    GET /api/dishes/random?limit={limit}
+    """
+    try:
+        # 获取参数，默认返回5个菜品
+        limit = int(request.GET.get('limit', 5))
+        
+        # 限制最大数量
+        if limit > 20:
+            limit = 20
+        
+        # 调用服务层获取随机菜品
+        dishes = dish_service.get_random_dishes(limit)
+        
+        return api_success({"dishes": dishes}, "获取随机菜品成功")
+        
+    except Exception as e:
+        return api_error("SERVER_001", str(e), "获取随机菜品错误", status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['POST'])
 def ai_recommend(request):
     """

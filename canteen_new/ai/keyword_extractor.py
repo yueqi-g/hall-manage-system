@@ -108,7 +108,7 @@ class KeywordExtractor:
         elif '微辣' in query:
             return 1
         elif '辣' in query:
-            return 2  # 默认辣度
+            return 5  # 默认辣度
         return None
     
     def _extract_price(self, query: str) -> Dict[str, Any]:

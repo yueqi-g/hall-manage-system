@@ -595,6 +595,48 @@ class DishRepository:
             }
             for dish in dishes
         ]
+    
+    def get_random_dishes(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """获取随机菜品"""
+        query = """
+            SELECT d.id, d.merchant_id, d.name, d.description, d.price, d.category, 
+                   d.taste, d.spice_level, d.image_url, d.is_available, d.stock_quantity, d.rating,
+                   m.store_name, m.canteen,
+                   COALESCE((
+                       SELECT waiting_time 
+                       FROM traffic_data 
+                       WHERE merchant_id = d.merchant_id 
+                       ORDER BY timestamp DESC 
+                       LIMIT 1
+                   ), 15) as wait_time
+            FROM dishes d
+            LEFT JOIN merchants m ON d.merchant_id = m.id
+            WHERE d.status = 'active'
+            ORDER BY RAND()
+            LIMIT %s
+        """
+        dishes = query_all(query, (limit,))
+        return [
+            {
+                "id": dish['id'],
+                "merchant_id": dish['merchant_id'],
+                "name": dish['name'],
+                "description": dish['description'],
+                "price": float(dish['price']),
+                "category": dish['category'],
+                "taste": dish['taste'],
+                "spice_level": dish['spice_level'],
+                "image_url": dish['image_url'],
+                "is_available": bool(dish['is_available']),
+                "stock_quantity": dish['stock_quantity'],
+                "rating": float(dish['rating']),
+                "store_name": dish['store_name'],
+                "merchant_name": dish['store_name'],
+                "canteen": dish['canteen'],
+                "wait_time": int(dish['wait_time']) if dish['wait_time'] else 15
+            }
+            for dish in dishes
+        ]
 
 
 class OrderRepository:

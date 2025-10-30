@@ -178,7 +178,12 @@
         <div class="container">
           <div class="section-header">
             <h2 class="section-title">{{ $t('aiFoodAssistant') }}</h2>
-            <h2 class="section-title">{{ $t('todayHotRecommendations') }}</h2>
+            <div class="popular-dishes-header">
+              <h2 class="section-title">{{ $t('todayHotRecommendations') }}</h2>
+              <button class="refresh-btn" @click="refreshRandomDishes" title="刷新随机菜品">
+                <i class="fas fa-sync-alt"></i>
+              </button>
+            </div>
           </div>
           <div class="red-line"></div>
           
@@ -258,26 +263,23 @@
                     </div>
                     <p class="dish-description">{{ dish.description }}</p>
                     <div class="dish-meta">
-                      <span class="dish-canteen">{{ dish.canteen }}</span>
+                      <span class="dish-store">{{ dish.store_name }}({{ dish.canteen }})</span>
                       <span class="dish-wait-time">
                         <i class="fas fa-clock"></i> {{ dish.waitTime }}
                       </span>
                     </div>
-                    <div class="dish-tags">
-                      <span 
-                        v-for="tag in dish.tags" 
-                        :key="tag"
-                        class="dish-tag"
-                        :class="getTagClass(tag)"
-                      >
-                        {{ tag }}
-                      </span>
-                    </div>
-                    <div class="dish-actions">
-                      <button class="dish-btn primary" @click.stop="orderDish(dish.id)">
-                        <i class="fas fa-utensils"></i> {{ $t('orderNow') }}
-                      </button>
-                      <button class="dish-btn secondary" @click.stop="addToFavorites(dish.id)">
+                    <div class="dish-tags-actions">
+                      <div class="dish-tags">
+                        <span 
+                          v-for="tag in dish.tags" 
+                          :key="tag"
+                          class="dish-tag"
+                          :class="getTagClass(tag)"
+                        >
+                          {{ tag }}
+                        </span>
+                      </div>
+                      <button class="dish-btn secondary small" @click.stop="addToFavorites(dish.id)">
                         <i class="fas fa-heart"></i> {{ $t('addToFavorites') }}
                       </button>
                     </div>
@@ -772,15 +774,10 @@ export default {
                         <span class="ai-dish-description">${dish.description}</span>
                         <span class="ai-dish-canteen">${dish.canteen || dish.store_name}</span>
                       </div>
-                      ${reasons && reasons[index] ? `
-                      <div class="ai-dish-reason">
-                        <i class="fas fa-lightbulb"></i> ${reasons[index]}
-                      </div>
-                      ` : ''}
-                      <div class="ai-dish-actions">
-                        <button class="ai-dish-action-btn ai-order-btn">
-                          <i class="fas fa-utensils"></i> 立即下单
-                        </button>
+                      <div class="ai-dish-reason-actions">
+                        <div class="ai-dish-reason">
+                          <i class="fas fa-lightbulb"></i> ${reasons && reasons[index] ? reasons[index] : '推荐菜品'}
+                        </div>
                         <button class="ai-dish-action-btn ai-favorite-btn">
                           <i class="fas fa-heart"></i> 添加收藏
                         </button>
@@ -894,32 +891,44 @@ export default {
       }
     },
     
-    // 加载热门推荐
-    async loadPopularDishes() {
+    // 加载随机菜品
+    async loadRandomDishes() {
       try {
-        console.log('加载热门推荐...')
+        console.log('加载随机菜品...')
         
-        const response = await dishesAPI.getPopular()
+        // 调用随机菜品API，默认返回5个菜品
+        const response = await dishesAPI.getRandom({ limit: 5 })
         
-        console.log('热门推荐结果:', response)
+        console.log('随机菜品结果:', response)
         
         // 后端返回格式: {success: true, data: {dishes: [...]}}
         if (response && response.success && response.data) {
           const dishes = Array.isArray(response.data.dishes) ? response.data.dishes : []
           
-          console.log('解析后的热门菜品:', dishes)
+          console.log('解析后的随机菜品:', dishes)
           
           this.popularDishes = dishes.map(dish => ({
             ...dish,
             color: this.getRandomGradient(),
-            icon: this.getDishIcon(dish.category)
+            icon: this.getDishIcon(dish.category),
+            // 确保有必要的字段
+            waitTime: dish.wait_time || '10-15分钟',
+            tags: [dish.taste, dish.category].filter(Boolean),
+            // 添加商家名称显示
+            store_name: dish.store_name || dish.merchant_name || '未知商家'
           }))
         } else {
-          console.log('加载热门推荐失败:', response?.message || '未知错误')
+          console.log('加载随机菜品失败:', response?.message || '未知错误')
         }
       } catch (error) {
-        console.error('加载热门推荐失败:', error)
+        console.error('加载随机菜品失败:', error)
       }
+    },
+    
+    // 刷新随机菜品
+    async refreshRandomDishes() {
+      console.log('刷新随机菜品...')
+      await this.loadRandomDishes()
     },
     
     getRandomGradient() {
@@ -1073,8 +1082,8 @@ export default {
   },
   mounted() {
     console.log('用户仪表板已加载')
-    // 加载热门推荐数据
-    this.loadPopularDishes()
+    // 加载随机菜品数据
+    this.loadRandomDishes()
     
     // 初始化价格范围拉选条
     this.updateRangeSlider()
@@ -2005,61 +2014,63 @@ export default {
   margin-left: 8px;
 }
 
-.ai-dish-reason {
-  font-size: 0.75rem;
-  color: #28a745;
-  background: #f0fff4;
-  padding: 4px 8px;
-  border-radius: 6px;
-  margin-top: 4px;
+/* AI对话框中的推荐理由和收藏按钮在同一行的样式 */
+.ai-dish-reason-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
-  border-left: 3px solid #28a745;
-}
-
-.ai-dish-reason i {
-  color: #28a745;
-  font-size: 0.7rem;
-}
-
-.ai-dish-actions {
-  display: flex;
+  justify-content: space-between;
   gap: 8px;
   margin-top: 4px;
 }
 
+.ai-dish-reason {
+  font-size: 0.7rem;
+  color: #28a745;
+  background: #f0fff4;
+  padding: 3px 6px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  border-left: 2px solid #28a745;
+  flex: 1;
+  max-width: 70%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ai-dish-reason i {
+  color: #28a745;
+  font-size: 0.65rem;
+}
+
 .ai-dish-action-btn {
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  font-size: 0.8rem;
+  gap: 3px;
+  font-size: 0.7rem;
   font-weight: 500;
   white-space: nowrap;
-}
-
-.ai-order-btn {
-  background: #28a745;
-  color: white;
-}
-
-.ai-order-btn:hover {
-  background: #1e7e34;
+  flex-shrink: 0;
 }
 
 .ai-favorite-btn {
-  background: #6c757d;
+  background: #e74c3c;
   color: white;
+  box-shadow: 0 1px 3px rgba(231, 76, 60, 0.3);
 }
 
 .ai-favorite-btn:hover {
-  background: #545b62;
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(231, 76, 60, 0.4);
 }
 
 /* 用户输入框样式 */
@@ -2124,6 +2135,125 @@ export default {
   margin-bottom: 4px;
 }
 
+/* 热门菜品标题和刷新按钮样式 */
+.popular-dishes-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.refresh-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+.refresh-btn:hover {
+  background: #c0392b;
+  transform: rotate(180deg);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+}
+
+.refresh-btn i {
+  font-size: 0.9rem;
+}
+
+/* 商家名称样式 */
+.dish-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.dish-store {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+.dish-wait-time {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #6c757d;
+}
+
+/* 口味标签和收藏按钮在同一行的样式 */
+.dish-tags-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.dish-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.dish-tag {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dish-tag.spicy {
+  background: #ffe6e6;
+  color: #d63031;
+}
+
+.dish-tag.cheap {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.dish-tag:not(.spicy):not(.cheap) {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+
+/* 缩小收藏按钮样式 */
+.dish-btn.small {
+  padding: 6px 12px;
+  font-size: 0.75rem;
+  min-width: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dish-btn.secondary.small {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+}
+
+.dish-btn.secondary.small:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .filter-actions {
@@ -2151,6 +2281,21 @@ export default {
   
   .ai-dish-actions {
     flex-direction: column;
+  }
+  
+  .popular-dishes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .refresh-btn {
+    align-self: flex-start;
+  }
+  
+  .dish-meta {
+    flex-wrap: wrap;
+    gap: 8px;
   }
 }
 </style>

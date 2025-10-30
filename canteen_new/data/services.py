@@ -230,6 +230,18 @@ class DishService:
         """
         return self.dish_repo.get_popular_dishes()
     
+    def get_random_dishes(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        获取随机菜品
+        
+        Args:
+            limit: 返回菜品数量，默认5个
+            
+        Returns:
+            随机菜品列表
+        """
+        return self.dish_repo.get_random_dishes(limit)
+    
     def get_search_suggestions(self, query: str) -> List[str]:
         """
         获取搜索建议

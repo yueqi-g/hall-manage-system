@@ -55,6 +55,7 @@ def get_dishes_by_criteria(
     if max_price is not None:
         criteria['priceMax'] = max_price
     if spice_level is not None:
+        # 辣度等级作为上限，查找小于等于指定辣度的菜品
         criteria['spice_level'] = spice_level
     if sort_by:
         criteria['ordering'] = sort_by

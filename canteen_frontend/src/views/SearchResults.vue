@@ -23,6 +23,34 @@
           <div class="filter-section">
             <h3>筛选条件</h3>
             
+            <!-- 品类筛选 -->
+            <div class="filter-group">
+              <label>品类</label>
+              <select v-model="filters.category" class="filter-select">
+                <option value="">全部品类</option>
+                <option value="饭">饭</option>
+                <option value="面">面</option>
+                <option value="饺子">饺子</option>
+                <option value="其他">其他</option>
+              </select>
+            </div>
+            
+            <!-- 口味偏好筛选 -->
+            <div class="filter-group">
+              <label>口味偏好</label>
+              <div class="flavor-tags">
+                <span 
+                  v-for="flavor in flavorOptions" 
+                  :key="flavor.value"
+                  class="flavor-tag" 
+                  :class="{ active: filters.flavors.includes(flavor.value) }"
+                  @click="toggleFlavor(flavor.value)"
+                >
+                  {{ flavor.label }}
+                </span>
+              </div>
+            </div>
+            
             <!-- 价格范围筛选 -->
             <div class="filter-group">
               <label>价格范围</label>
@@ -350,7 +378,15 @@ export default {
         crowd: 'any',
         spiceLevel: '',
         hall: ''
-      }
+      },
+      
+      // 口味选项
+      flavorOptions: [
+        { value: '辣', label: '辣' },
+        { value: '咸', label: '咸' },
+        { value: '淡', label: '淡' },
+        { value: '酸甜', label: '酸甜' }
+      ]
     }
   },
   computed: {
@@ -420,20 +456,41 @@ export default {
       let summary = '筛选条件：'
       const conditions = []
       
+      // 品类筛选条件
       if (filters.category) {
-        conditions.push(`品类：${this.getCategoryName(filters.category)}`)
+        conditions.push(`品类：${filters.category}`)
       }
       
+      // 口味偏好筛选条件
       if (filters.flavors.length > 0) {
-        conditions.push(`口味：${filters.flavors.map(f => this.getFlavorName(f)).join('、')}`)
+        conditions.push(`口味：${filters.flavors.join('、')}`)
       }
       
+      // 价格范围筛选条件
       if (filters.priceMin > 0 || filters.priceMax < 100) {
         conditions.push(`价格：¥${filters.priceMin || 0}-¥${filters.priceMax || 100}`)
       }
       
+      // 辣度等级筛选条件
+      if (filters.spiceLevel !== '') {
+        const spiceText = this.getSpiceLevelText(filters.spiceLevel)
+        conditions.push(`辣度：${spiceText}`)
+      }
+      
+      // 人流量筛选条件
       if (filters.crowd && filters.crowd !== 'any') {
         conditions.push(`人流量：${this.getCrowdName(filters.crowd)}`)
+      }
+      
+      // 食堂筛选条件
+      if (filters.hall) {
+        conditions.push(`食堂：${filters.hall}`)
+      }
+      
+      // 排序方式
+      if (this.sortBy && this.sortBy !== 'default') {
+        const sortText = this.getSortText(this.sortBy)
+        conditions.push(`排序：${sortText}`)
       }
       
       this.searchSummary = summary + conditions.join('，')
@@ -547,6 +604,16 @@ export default {
       this.performSearch()
     },
     
+    // 切换口味选择
+    toggleFlavor(flavor) {
+      const index = this.filters.flavors.indexOf(flavor)
+      if (index > -1) {
+        this.filters.flavors.splice(index, 1)
+      } else {
+        this.filters.flavors.push(flavor)
+      }
+    },
+    
     // 重置筛选
     resetFilters() {
       this.filters = {
@@ -621,6 +688,31 @@ export default {
         'high': '拥挤'
       }
       return crowdMap[crowd] || crowd
+    },
+    
+    // 获取辣度等级文本描述
+    getSpiceLevelText(level) {
+      const spiceLevels = {
+        0: '不辣',
+        1: '微辣',
+        2: '中辣',
+        3: '辣',
+        4: '特辣',
+        5: '变态辣'
+      }
+      return spiceLevels[level] || `辣度 ≤ ${level}`
+    },
+    
+    // 获取排序方式文本描述
+    getSortText(sortBy) {
+      const sortMap = {
+        'default': '默认排序',
+        'price': '价格从低到高',
+        '-price': '价格从高到低',
+        '-rating': '评分最高',
+        'created_at': '最新上架'
+      }
+      return sortMap[sortBy] || sortBy
     },
     
     // 下单

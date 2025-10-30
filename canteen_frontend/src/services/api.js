@@ -147,6 +147,9 @@ export const dishesAPI = {
   // 热门推荐
   getPopular: () => api.get('/dishes/popular'),
   
+  // 随机菜品
+  getRandom: (params) => api.get('/dishes/random', { params }),
+  
   // 菜品详情
   getDetail: (id) => api.get(`/dishes/${id}`)
 }
