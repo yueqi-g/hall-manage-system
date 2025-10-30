@@ -221,11 +221,12 @@
                       <span class="toggle-slider"></span>
                       <span class="toggle-text">应用保存的偏好限制</span>
                     </label>
+                    <button class="preference-settings-btn" @click="scrollToFilterPanel">
+                      <i class="fas fa-cog"></i>
+                      设置偏好
+                    </button>
                   </div>
                   
-                  <div class="input-example">
-                    <span>{{ $t('inputExample') }}</span>
-                  </div>
                   <div class="input-group">
                     <input 
                       type="text" 
@@ -2269,6 +2270,10 @@ export default {
 .preference-toggle {
   margin-bottom: 12px;
   padding: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .toggle-label {
@@ -2307,7 +2312,7 @@ export default {
 }
 
 .toggle-checkbox:checked + .toggle-slider {
-  background-color: #e74c3c;
+  background-color: #667eea;
 }
 
 .toggle-checkbox:checked + .toggle-slider:before {
@@ -2317,6 +2322,34 @@ export default {
 .toggle-text {
   font-size: 0.85rem;
   color: #495057;
+}
+
+/* 设置偏好按钮样式 */
+.preference-settings-btn {
+  padding: 6px 12px;
+  border: 1px solid #667eea;
+  border-radius: 6px;
+  background: white;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.preference-settings-btn:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.preference-settings-btn i {
+  font-size: 0.75rem;
 }
 
 /* 响应式设计 */
