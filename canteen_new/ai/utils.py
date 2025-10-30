@@ -87,12 +87,12 @@ def get_dishes_by_criteria(
     return dishes
 
 
-# 工具函数Schema定义（符合OpenAI Function Calling规范）
+# 工具函数Schema 要求大模型按照特定格式返回
 GET_DISHES_SCHEMA = {
     "type": "function",
     "function": {
         "name": "get_dishes_by_criteria",
-        "description": "根据用户需求查询符合条件的菜品，支持等待时间和客流级别筛选",
+        "description": "根据用户需求查询符合条件的菜品",
         "parameters": {
             "type": "object",
             "properties": {
@@ -139,6 +139,10 @@ GET_DISHES_SCHEMA = {
                 "crowd_level": {
                     "type": "string",
                     "description": "客流级别：低、中等、高，用于推荐等待时间合适的菜品"
+                },
+                "llm_reason": {
+                    "type": "string",
+                    "description": "简洁的推荐理由，基于筛选条件和情景数据合理描述"
                 }
             },
             "required": []  # 所有参数均为可选

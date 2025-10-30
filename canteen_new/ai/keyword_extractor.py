@@ -7,7 +7,6 @@ from typing import Dict, Any, List
 
 
 class KeywordExtractor:
-    """关键词提取器 - 第一阶段处理"""
     
     def __init__(self):
         # 定义关键词映射

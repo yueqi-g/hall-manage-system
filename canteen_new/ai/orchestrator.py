@@ -84,13 +84,14 @@ class AIOrchestrator:
         )
         
         # 处理LLM响应
-        if llm_result.get("type") == "recommendation":
+        if llm_result.get("type") == "recommendation" or llm_result.get("type") == "chat_response":
             # LLM成功生成了推荐
             return {
                 **llm_result,
                 "processing_mode": "llm_enhanced",
                 "context_data": context_data
             }
+            
         else:
             # LLM处理失败，降级到关键词处理
             print("LLM处理失败，降级到关键词处理")

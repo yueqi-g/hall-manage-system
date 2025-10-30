@@ -40,17 +40,7 @@ class LLMService:
         return self.client is not None
     
     def enhance_with_context(self, user_query: str, initial_params: Dict, context_data: Dict) -> Dict[str, Any]:
-        """
-        使用LLM结合情景数据增强初始判断
-        
-        Args:
-            user_query: 用户原始输入
-            initial_params: 初始判断参数
-            context_data: 情景数据
-            
-        Returns:
-            增强后的推荐结果
-        """
+
         print(f"=== LLM增强处理调试 ===")
         print(f"用户查询: {user_query}")
         print(f"初始参数: {initial_params}")
@@ -99,7 +89,14 @@ class LLMService:
 1. **必须调用工具函数**：使用get_dishes_by_criteria函数查询菜品
 2. **尊重初始判断**：如果情景数据与初始判断冲突，以初始判断为准
 3. **合理增强**：基于情景数据合理调整参数，但不能删除初始参数
-4. **生成友好回复**：在工具调用后，生成用户友好的回复文本
+4. **简洁回应**：用简洁的语言直接回应用户输入，避免冗长
+5. **生成推荐理由**：必须提供llm_reason参数，基于确定的筛选条件和情景数据合理描述推荐理由
+
+## 推荐理由生成要求
+- **简洁明了**：推荐理由要简洁，控制在1-2句话内
+- **基于筛选条件**：理由必须基于实际使用的查询参数（如口味、价格、分类等）
+- **结合情景**：合理结合天气、季节、客流等情景数据
+- **个性化**：针对用户的具体需求提供个性化理由
 
 ## 参数调整指南
 - 寒冷天气({weather_info['temperature']}°C)：可适当增加辣度或推荐热食
@@ -107,24 +104,12 @@ class LLMService:
 - 高客流：可设置max_wait_time限制
 - 节日：可推荐相关特色菜品
 
-请根据用户查询，结合初始判断和情景数据，调用工具函数并生成友好的回复。
+请根据用户查询，结合初始判断和情景数据，调用工具函数并生成简洁的回复和合理的推荐理由。
 """
         return prompt
     
     def call_llm_with_tools(self, messages: List[Dict], tools: List[Dict], 
                           temperature: float = 0.7, max_tokens: int = 2000):
-        """
-        调用LLM并支持工具函数
-        
-        Args:
-            messages: 消息列表
-            tools: 工具函数定义
-            temperature: 温度参数
-            max_tokens: 最大token数
-            
-        Returns:
-            LLM响应
-        """
         if self.client is None:
             return self._mock_llm_call(messages, tools)
         
@@ -140,7 +125,6 @@ class LLMService:
             return response
         except Exception as e:
             print(f"LLM调用失败: {e}")
-            # 降级到模拟模式
             return self._mock_llm_call(messages, tools)
     
     def _mock_llm_call(self, messages: List[Dict], tools: List[Dict]):
@@ -192,6 +176,11 @@ class LLMService:
                     tool_args = json.loads(tool_call.function.arguments)
                     print(f"LLM生成的参数: {tool_args}")
                     
+                    # 提取推荐理由
+                    llm_reason = tool_args.pop('llm_reason', None) if 'llm_reason' in tool_args else None
+                    if llm_reason:
+                        print(f"LLM生成的推荐理由: {llm_reason}")
+                    
                     # 验证参数
                     validated_args = validate_tool_arguments(tool_args)
                     
@@ -199,7 +188,7 @@ class LLMService:
                     dishes = get_dishes_by_criteria(**validated_args)
                     
                     # 生成响应
-                    return self._generate_llm_response(dishes, user_query, context_data, response.choices[0].message.content)
+                    return self._generate_llm_response(dishes, user_query, context_data, response.choices[0].message.content, llm_reason)
             
             # 如果没有调用工具，返回聊天响应
             return {
@@ -213,7 +202,7 @@ class LLMService:
             print(f"处理LLM响应失败: {e}")
             raise
     
-    def _generate_llm_response(self, dishes: List, user_query: str, context_data: Dict, llm_content: str) -> Dict[str, Any]:
+    def _generate_llm_response(self, dishes: List, user_query: str, context_data: Dict, llm_content: str, llm_reason: str = None) -> Dict[str, Any]:
         """生成LLM处理的响应"""
         if not dishes:
             return {
@@ -228,9 +217,19 @@ class LLMService:
         if not llm_content or llm_content.strip() == "":
             llm_content = self._generate_default_recommendation_text(dishes, user_query, context_data)
         
+        # 生成推荐理由：优先使用LLM生成的推荐理由，如果没有则使用原有的理由生成逻辑
+        if llm_reason:
+            # 使用LLM生成的推荐理由
+            reasons = llm_reason
+            print(f"使用LLM生成的推荐理由: {llm_reason}")
+        else:
+            # 使用原有的理由生成逻辑
+            reasons = self._generate_llm_reasons(dishes, context_data)
+            print("使用原有的理由生成逻辑")
+        
         return {
             "type": "recommendation",
-            "content": llm_content,
+            "content": reasons,
             "dishes": dishes,
             "reasons": self._generate_llm_reasons(dishes, context_data),
             "processing_mode": "llm_enhanced",
