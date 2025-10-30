@@ -642,6 +642,9 @@ export default {
       // 显示加载状态
       const loadingMessage = this.addLoadingMessage()
       
+      // 设置请求超时计时器
+      let requestTimeout = null
+      
       try {
         // 获取当前用户
         const currentUser = JSON.parse(localStorage.getItem('currentUser'))
@@ -649,11 +652,27 @@ export default {
         
         console.log('发送AI推荐请求:', this.aiInput, '应用用户偏好:', this.applyUserPreferences, '用户ID:', userId)
         
-        const response = await dishesAPI.aiRecommend({
+        // 设置请求超时（55秒，比API超时稍短）
+        const timeoutPromise = new Promise((_, reject) => {
+          requestTimeout = setTimeout(() => {
+            reject(new Error('请求超时，AI处理时间较长，请稍后再试'))
+          }, 55000)
+        })
+        
+        // 创建API请求
+        const apiPromise = dishesAPI.aiRecommend({
           query: this.aiInput,
           merge_user_preference: this.applyUserPreferences,
           user_id: userId
         })
+        
+        // 使用Promise.race处理超时
+        const response = await Promise.race([apiPromise, timeoutPromise])
+        
+        // 清除超时计时器
+        if (requestTimeout) {
+          clearTimeout(requestTimeout)
+        }
         
         console.log('AI推荐结果:', response)
         
@@ -675,9 +694,23 @@ export default {
         }
       } catch (error) {
         console.error('AI推荐失败:', error)
+        // 清除超时计时器
+        if (requestTimeout) {
+          clearTimeout(requestTimeout)
+        }
+        
         // 移除加载消息
         this.removeLoadingMessage(loadingMessage)
-        this.addMessage('抱歉，AI推荐服务暂时不可用，请稍后再试。', 'ai')
+        
+        // 根据错误类型显示不同的提示信息
+        let errorMessage = '抱歉，AI推荐服务暂时不可用，请稍后再试。'
+        if (error.message.includes('超时')) {
+          errorMessage = 'AI处理时间较长，请稍后再试或尝试更简单的查询。'
+        } else if (error.code === 'ECONNABORTED') {
+          errorMessage = '请求超时，请检查网络连接或稍后再试。'
+        }
+        
+        this.addMessage(errorMessage, 'ai')
       }
       
       // 滚动到底部

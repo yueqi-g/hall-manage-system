@@ -3,7 +3,7 @@ import axios from 'axios'
 // 创建axios实例
 const api = axios.create({
   baseURL: process.env.VUE_APP_API_BASE_URL || 'http://localhost:8000/api',
-  timeout: 10000,
+  timeout: 30000, // 延长全局超时时间到30秒
   headers: {
     'Content-Type': 'application/json'
   }
@@ -141,8 +141,8 @@ export const dishesAPI = {
   // 菜品筛选
   filter: (params) => api.get('/dishes/filter', { params }),
   
-  // AI智能推荐
-  aiRecommend: (data) => api.post('/dishes/ai-recommend', data),
+  // AI智能推荐 - 设置更长的超时时间（60秒）
+  aiRecommend: (data) => api.post('/dishes/ai-recommend', data, { timeout: 60000 }),
   
   // 热门推荐
   getPopular: () => api.get('/dishes/popular'),
